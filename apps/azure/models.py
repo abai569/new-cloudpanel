@@ -137,7 +137,6 @@ class Account(models.Model):
             'Canonical:0001-com-ubuntu-server-jammy:22_04-lts:latest': 'Ubuntu 22.04 LTS',
             'Debian:debian-13:13:latest': 'Debian 13',
             'Debian:debian-12:12:latest': 'Debian 12',
-            'Debian:debian-11:11:latest': 'Debian 11',
         }
         if name in '': return _list
         return _list.get(name)

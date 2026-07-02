@@ -165,7 +165,6 @@ class Vm(models.Model):
     type = models.CharField('实例规格', max_length=20, choices=type_choices, blank=True)
 
     images_choices = (
-        ('linode/debian11', 'Debian 11'),
         ('linode/debian12', 'Debian 12'),
         ('linode/debian13', 'Debian 13'),
         ('linode/ubuntu22.04', 'Ubuntu 22.04 LTS'),

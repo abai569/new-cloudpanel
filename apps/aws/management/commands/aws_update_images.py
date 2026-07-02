@@ -4,50 +4,40 @@ from libs.aws import AwsApi
 
 
 IMAGE_QUERIES = [
-    ('Ubuntu 24.04 LTS', '099720109477', 'ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*'),
-    ('Ubuntu 22.04 LTS', '099720109477', 'ubuntu/images/hvm-ssd-gp3/ubuntu-jammy-22.04-amd64-server-*'),
+    ('Ubuntu 24.04 LTS', '099720109477', 'ubuntu/images/*/ubuntu-noble-24.04-amd64-server-*'),
+    ('Ubuntu 22.04 LTS', '099720109477', 'ubuntu/images/*/ubuntu-jammy-22.04-amd64-server-*'),
     ('Debian 13', '136693071363', 'debian-13-*'),
     ('Debian 12', '136693071363', 'debian-12-*'),
-    ('Debian 11', '136693071363', 'debian-11-*'),
 ]
 
 STATIC_IMAGES = [
     ('Ubuntu 24.04 LTS', 'ami-0d6b1913edac0f379', 'ap-northeast-1'),
     ('Ubuntu 22.04 LTS', 'ami-07c7e04902bf289d3', 'ap-northeast-1'),
     ('Debian 12', 'ami-005f60e1d45e94295', 'ap-northeast-1'),
-    ('Debian 11', 'ami-082aea917abdf1460', 'ap-northeast-1'),
     ('Ubuntu 24.04 LTS', 'ami-0a1e932e32433eab3', 'ap-southeast-1'),
     ('Ubuntu 22.04 LTS', 'ami-04731386031bf42a0', 'ap-southeast-1'),
     ('Debian 12', 'ami-04e3fbacff3c69d76', 'ap-southeast-1'),
-    ('Debian 11', 'ami-06cd01c5179e80b63', 'ap-southeast-1'),
     ('Ubuntu 24.04 LTS', 'ami-04b70fa74eebaf0b8', 'us-east-1'),
     ('Ubuntu 22.04 LTS', 'ami-080e12f04d64e9d60', 'us-east-1'),
     ('Debian 12', 'ami-0eab7f7272015e6f3', 'us-east-1'),
-    ('Debian 11', 'ami-0c6599df7db49d2c7', 'us-east-1'),
     ('Ubuntu 24.04 LTS', 'ami-04242e7eaf3ae699e', 'eu-west-1'),
     ('Ubuntu 22.04 LTS', 'ami-0c3996e77be06549b', 'eu-west-1'),
     ('Debian 12', 'ami-07976520a94fa5a81', 'eu-west-1'),
-    ('Debian 11', 'ami-0a0b8cf6e5115744a', 'eu-west-1'),
     ('Ubuntu 24.04 LTS', 'ami-04b8631283aa63524', 'us-west-2'),
     ('Ubuntu 22.04 LTS', 'ami-01650547f28e84c8c', 'us-west-2'),
     ('Debian 12', 'ami-0ea3b65ee55bcfd28', 'us-west-2'),
-    ('Debian 11', 'ami-0c0f7b0cb8e7d75e8', 'us-west-2'),
     ('Ubuntu 24.04 LTS', 'ami-053eec3a534325f3d', 'ap-south-1'),
     ('Ubuntu 22.04 LTS', 'ami-0a03b38c94424cf83', 'ap-south-1'),
     ('Debian 12', 'ami-0a3cd20ddbd5b169b', 'ap-south-1'),
-    ('Debian 11', 'ami-08a7c4f9eb6edfa6d', 'ap-south-1'),
     ('Ubuntu 24.04 LTS', 'ami-03e6633f4e9382fcc', 'ap-northeast-2'),
     ('Ubuntu 22.04 LTS', 'ami-08b775db022a55aca', 'ap-northeast-2'),
     ('Debian 12', 'ami-0680e867fd8d6a449', 'ap-northeast-2'),
-    ('Debian 11', 'ami-0cac8af1bc6336618', 'ap-northeast-2'),
     ('Ubuntu 24.04 LTS', 'ami-0fcf56edd656cdda3', 'eu-central-1'),
     ('Ubuntu 22.04 LTS', 'ami-076c69035370ad2e1', 'eu-central-1'),
     ('Debian 12', 'ami-01c42582923d63551', 'eu-central-1'),
-    ('Debian 11', 'ami-0ca0de2a988ab7d80', 'eu-central-1'),
     ('Ubuntu 24.04 LTS', 'ami-03020643ea6faae3e', 'ap-southeast-2'),
     ('Ubuntu 22.04 LTS', 'ami-0d135c42158e6e9c7', 'ap-southeast-2'),
     ('Debian 12', 'ami-0c5af48af4106dfad', 'ap-southeast-2'),
-    ('Debian 11', 'ami-07117f48f0ceb9f8f', 'ap-southeast-2'),
 ]
 
 
@@ -74,7 +64,7 @@ class Command(BaseCommand):
             self._update_static()
 
     def _update_dynamic(self, key_id, key_secret):
-        self.stdout.write('Fetching AMI images from AWS dynamically...')
+        self.stdout.write('Fetching Debian 12/13 + Ubuntu 22.04/24.04 AMI per region ...')
 
         aApi = AwsApi(key_id, key_secret)
         aApi.region = 'us-east-1'

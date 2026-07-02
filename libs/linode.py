@@ -129,7 +129,7 @@ class LinodeApi():
             images = []
             for img in self.ret.get('data', []):
                 img_id = img.get('id', '')
-                if any(img_id.startswith(p) for p in ['linode/debian11', 'linode/debian12', 'linode/debian13', 'linode/ubuntu22.04', 'linode/ubuntu24.04']):
+                if any(img_id.startswith(p) for p in ['linode/debian12', 'linode/debian13', 'linode/ubuntu22.04', 'linode/ubuntu24.04']):
                     images.append(img_id)
             return images
         except Exception:

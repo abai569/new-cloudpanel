@@ -135,7 +135,7 @@ class DoApi():
             slugs = set()
             for img in resp.json().get('images', []):
                 s = img.get('slug', '')
-                if any(s.startswith(p) for p in ['debian-11', 'debian-12', 'debian-13', 'ubuntu-22-04', 'ubuntu-24-04']):
+                if any(s.startswith(p) for p in ['debian-12', 'debian-13', 'ubuntu-22-04', 'ubuntu-24-04']):
                     slugs.add(s)
             if slugs:
                 return sorted(slugs)
@@ -146,7 +146,6 @@ class DoApi():
     @classmethod
     def _fallback_images(cls):
         return [
-            'debian-11-x64',
             'debian-12-x64',
             'debian-13-x64',
             'ubuntu-22-04-x64',
