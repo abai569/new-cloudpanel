@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CloudPanel - 个人资料</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;color:#333;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.08);width:420px;max-width:94vw;padding:32px}
+h2{font-size:20px;margin-bottom:24px;text-align:center;color:#1890ff}
+.info{margin-bottom:20px;padding:16px;background:#fafafa;border-radius:8px}
+.info p{line-height:2;font-size:14px;color:#555}
+.info p strong{color:#333;display:inline-block;width:80px}
+.section{margin-top:20px}
+.section h3{font-size:15px;margin-bottom:12px;color:#333;border-bottom:1px solid #f0f0f0;padding-bottom:8px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:13px;color:#666;margin-bottom:4px}
+.form-group input{width:100%;height:40px;padding:0 12px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;outline:none;transition:border .2s}
+.form-group input:focus{border-color:#1890ff;box-shadow:0 0 0 2px rgba(24,144,255,.2)}
+.msg{padding:8px 12px;border-radius:6px;font-size:13px;margin-bottom:16px;display:none}
+.msg.success{display:block;background:#f6ffed;color:#52c41a;border:1px solid #b7eb8f}
+.msg.error{display:block;background:#fff2f0;color:#ff4d4f;border:1px solid #ffccc7}
+.btn{height:40px;padding:0 20px;border:none;border-radius:6px;font-size:14px;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn-primary{background:#1890ff;color:#fff}
+.btn-default{background:#fff;color:#333;border:1px solid #d9d9d9;margin-left:8px}
+.actions{display:flex;margin-top:24px;justify-content:flex-end}
+.loading{text-align:center;color:#999;padding:40px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>个人资料</h2>
+  <div id="loading" class="loading">加载中...</div>
+  <div id="content" style="display:none">
+    <div class="info" id="profileInfo"></div>
+    <div class="section">
+      <h3>修改密码</h3>
+      <div class="msg" id="msg"></div>
+      <div class="form-group">
+        <label>旧密码</label>
+        <input type="password" id="oldPassword" placeholder="请输入旧密码">
+      </div>
+      <div class="form-group">
+        <label>新密码</label>
+        <input type="password" id="newPassword" placeholder="请输入新密码（至少4位）">
+      </div>
+      <div class="form-group">
+        <label>确认密码</label>
+        <input type="password" id="confirmPassword" placeholder="请再次输入新密码">
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="changePassword()">保存</button>
+        <button class="btn btn-default" onclick="window.location.href='/'">返回首页</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+var token = (function(){
+  var user = localStorage.getItem('user');
+  if (user) {
+    try { var d = JSON.parse(user); if (d.token) return d.token } catch(e) {}
+  }
+  return ''
+})();
+
+function req(method, url, data) {
+  return fetch(url, {
+    method: method,
+    headers: {
+      'Content-Type': data ? 'application/x-www-form-urlencoded' : 'application/json',
+      'X-Token': token
+    },
+    body: data ? new URLSearchParams(data).toString() : null
+  }).then(function(r) { return r.json() })
+}
+
+function loadProfile() {
+  req('GET', '/api/users/profile').then(function(res) {
+    document.getElementById('loading').style.display = 'none';
+    if (res.code !== 20000) {
+      showMsg('登录会话已过期，请重新登录', 'error');
+      setTimeout(function(){ window.location.href='/' }, 2000);
+      return;
+    }
+    var d = res.data;
+    document.getElementById('profileInfo').innerHTML =
+      '<p><strong>用户名</strong>' + d.username + '</p>' +
+      '<p><strong>邮箱</strong>' + (d.email || '-') + '</p>' +
+      '<p><strong>角色</strong>' + d.roles.join(', ') + '</p>' +
+      '<p><strong>注册时间</strong>' + d.create_time + '</p>';
+    document.getElementById('content').style.display = 'block';
+  }).catch(function() {
+    showMsg('获取用户信息失败', 'error');
+    document.getElementById('loading').style.display = 'none';
+  });
+}
+
+function changePassword() {
+  var oldPwd = document.getElementById('oldPassword').value.trim();
+  var newPwd = document.getElementById('newPassword').value.trim();
+  var confirmPwd = document.getElementById('confirmPassword').value.trim();
+
+  if (!oldPwd) { showMsg('请输入旧密码', 'error'); return }
+  if (newPwd.length < 4) { showMsg('新密码至少4位', 'error'); return }
+  if (newPwd !== confirmPwd) { showMsg('两次输入的密码不一致', 'error'); return }
+
+  req('POST', '/api/users/change_password', {
+    old_password: oldPwd,
+    new_password: newPwd,
+    confirm_password: confirmPwd
+  }).then(function(res) {
+    if (res.code === 20000) {
+      showMsg(res.message || '修改成功', 'success');
+      localStorage.removeItem('user');
+      setTimeout(function(){ window.location.href='/' }, 1500);
+    } else {
+      showMsg(res.message || '修改失败', 'error');
+    }
+  }).catch(function() {
+    showMsg('修改密码失败，请重试', 'error');
+  });
+}
+
+function showMsg(msg, type) {
+  var el = document.getElementById('msg');
+  el.className = 'msg ' + type;
+  el.textContent = msg;
+}
+
+loadProfile();
+</script>
+</body>
+</html>
