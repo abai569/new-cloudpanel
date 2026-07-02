@@ -2,8 +2,7 @@
 #
 # CloudPanel 一键安装脚本
 # 支持: Ubuntu/Debian/CentOS/RHEL
-# 功能: 自动安装 Docker、Docker Compose、部署 CloudPanel
-#
+# 功能: 自动安装 Docker、Docker Compose、部署 CloudPanel、自动初始化
 
 set -e
 
@@ -16,10 +15,8 @@ NC='\033[0m'
 
 # 配置
 INSTALL_DIR="/opt/cloudpanel"
-FRONTEND_PORT=8086
-BACKEND_PORT=8111
-GITHUB_REPO="abai569/new-cloudpanel"
-BRANCH="main"
+SERVICE_CONTAINER="cloudpanel-api"
+COMPOSE_SVC="api"
 
 # 日志函数
 log_info() {
@@ -94,15 +91,8 @@ install_docker() {
 # 安装 Docker Compose
 install_compose() {
     if command -v docker-compose &> /dev/null || docker compose version &> /dev/null 2>&1; then
-        if command -v docker-compose &> /dev/null; then
-            log_info "Docker Compose 已安装: $(docker-compose --version)"
-        else
-            log_info "Docker Compose 已安装: $(docker compose version)"
-        fi
-        COMPOSE_CMD="docker compose"
-        if command -v docker-compose &> /dev/null; then
-            COMPOSE_CMD="docker-compose"
-        fi
+        log_info "Docker Compose 已安装"
+        COMPOSE_CMD="$(command -v docker-compose || echo 'docker compose')"
         return
     fi
 
@@ -113,60 +103,117 @@ install_compose() {
     chmod +x /usr/local/bin/docker-compose
 
     COMPOSE_CMD="docker-compose"
-    docker-compose --version
     log_info "Docker Compose 安装完成"
 }
 
-# 生成随机密钥
-generate_secret_key() {
-    python3 -c "import secrets; print(secrets.token_urlsafe(50))" 2>/dev/null || \
-    openssl rand -base64 48
+# 卸载功能
+do_uninstall() {
+    echo ""
+    echo -e "${RED}======================================${NC}"
+    echo -e "${RED}  CloudPanel 卸载确认${NC}"
+    echo -e "${RED}======================================${NC}"
+    echo -e "您即将卸载位于 ${INSTALL_DIR} 的 CloudPanel"
+    echo -e "此操作将删除所有容器、数据卷和配置文件"
+    echo ""
+    read -p "是否继续? (y/N): " confirm
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        log_info "卸载已取消"
+        exit 0
+    fi
+
+    log_step "正在停止和清理容器..."
+    if [ -d "$INSTALL_DIR" ]; then
+        cd "$INSTALL_DIR"
+        docker compose down -v
+    fi
+
+    log_step "正在删除安装目录..."
+    rm -rf "$INSTALL_DIR"
+    
+    # 清理 Docker 镜像
+    log_info "清理 Docker 镜像..."
+    docker image prune -f
+
+    echo ""
+    echo -e "${GREEN}CloudPanel 已成功卸载并清理!${NC}"
+    exit 0
 }
 
-# 生成随机密码
-generate_password() {
-    openssl rand -base64 12 | tr -d "=+/" | cut -c1-16
+# 升级功能
+do_update() {
+    echo ""
+    echo -e "${BLUE}======================================${NC}"
+    echo -e "${BLUE}  CloudPanel 升级更新${NC}"
+    echo -e "${BLUE}======================================${NC}"
+
+    if [ ! -d "$INSTALL_DIR" ]; then
+        log_error "未找到安装目录 ${INSTALL_DIR}，请先执行安装"
+        exit 1
+    fi
+
+    cd "$INSTALL_DIR"
+    log_info "正在拉取最新镜像..."
+    docker compose pull
+
+    log_step "正在重启服务..."
+    docker compose up -d
+
+    # 再次初始化（防止数据库结构变更）
+    log_step "正在等待服务就绪..."
+    wait_for_container
+
+    log_info "正在初始化数据变更..."
+    run_django_command "python manage.py aws_update_images"
+
+    echo ""
+    echo -e "${GREEN}CloudPanel 升级完成！${NC}"
+    echo -e "您可以访问 http://<YourIP>:8086 查看效果"
+    exit 0
 }
 
-# 创建目录
-create_directories() {
+# 安装逻辑函数
+do_install() {
+    echo ""
+    echo -e "${GREEN}======================================${NC}"
+    echo -e "${GREEN}  CloudPanel 一键安装脚本${NC}"
+    echo -e "${GREEN}======================================${NC}"
+    echo ""
+
+    check_root
+    detect_os
+    install_docker
+    install_compose
+
+    # 检查是否已安装
+    if [ -d "$INSTALL_DIR" ] && [ -f "$INSTALL_DIR/docker-compose.yml" ]; then
+        log_warn "$INSTALL_DIR 似乎已存在"
+        read -p "是否覆盖安装? (y/N): " confirm
+        if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+            log_info "安装已取消"
+            exit 0
+        fi
+        rm -rf "$INSTALL_DIR"
+    fi
+
     log_step "创建目录: $INSTALL_DIR"
-    mkdir -p "$INSTALL_DIR"
-    mkdir -p "$INSTALL_DIR/data/mysql"
-    mkdir -p "$INSTALL_DIR/data/redis"
-    mkdir -p "$INSTALL_DIR/logs"
-}
+    mkdir -p "$INSTALL_DIR"/{data/mysql,data/redis,logs}
 
-# 下载配置文件
-download_configs() {
     log_step "下载配置文件..."
-
-    local BASE_URL="https://raw.githubusercontent.com/${GITHUB_REPO}/refs/heads/${BRANCH}"
-
+    local BASE_URL="https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/heads/main"
     curl -fsSL "${BASE_URL}/docker-compose.yml" -o "$INSTALL_DIR/docker-compose.yml" || {
         log_error "下载 docker-compose.yml 失败"
         exit 1
     }
 
-    curl -fsSL "${BASE_URL}/.env.example" -o "$INSTALL_DIR/.env.example" || {
-        log_warn "下载 .env.example 失败，将自动生成 .env"
-    }
-
-    log_info "配置文件下载完成"
-}
-
-# 生成 .env 文件
-generate_env() {
+    # 生成 .env
     log_step "生成 .env 配置文件..."
-
-    local SECRET_KEY=$(generate_secret_key)
-    local MYSQL_PASSWORD=$(generate_password)
+    local SECRET_KEY=$(openssl rand -base64 48 2>/dev/null || python3 -c "import secrets; print(secrets.token_urlsafe(50))")
+    local MYSQL_PASSWORD=$(openssl rand -base64 12 | tr -d "=+/" | cut -c1-16)
 
     cat > "$INSTALL_DIR/.env" << EOF
 # CloudPanel 自动生成的配置文件
 # 生成时间: $(date '+%Y-%m-%d %H:%M:%S')
 
-# 调试模式 (0 关闭, 1 开启)
 DEBUG=0
 DJANGO_SETTINGS_MODULE=panelProject.settings
 
@@ -187,159 +234,109 @@ TZ=Asia/Shanghai
 # 安全设置
 DJANGO_SECRET_KEY=${SECRET_KEY}
 ALLOWED_HOSTS=*
-CORS_ALLOWED_ORIGINS=http://localhost:${FRONTEND_PORT},http://127.0.0.1:${FRONTEND_PORT}
+CORS_ALLOWED_ORIGINS=http://localhost:8086,http://127.0.0.1:8086
 
 # 端口设置
-FRONTENDPORT=${FRONTEND_PORT}
-BACKENDPORT=${BACKEND_PORT}
+FRONTENDPORT=8086
+BACKENDPORT=8111
 EOF
 
-    log_info ".env 文件已生成"
-    echo ""
-    log_warn "请妥善保管以下信息:"
-    echo -e "  ${YELLOW}MySQL Root 密码:${NC} ${MYSQL_PASSWORD}"
-    echo -e "  ${YELLOW}Django SECRET_KEY:${NC} ${SECRET_KEY}"
-    echo ""
+    cd "$INSTALL_DIR"
+    
+    log_step "开始拉取镜像并启动服务..."
+    $COMPOSE_CMD up -d
+
+    # 关键步骤：等待数据库就绪
+    wait_for_container
+
+    # 关键步骤：执行初始化管理命令
+    init_admin
+
+    # 关键步骤：初始化 AWS 镜像
+    log_info "正在初始化 AWS 镜像数据..."
+    run_django_command "python manage.py aws_update_images"
+
+    show_success
 }
 
-# 交互式配置
-interactive_config() {
-    echo ""
-    echo -e "${BLUE}======================================${NC}"
-    echo -e "${BLUE}  CloudPanel 安装配置${NC}"
-    echo -e "${BLUE}======================================${NC}"
-    echo ""
-    echo -e "端口配置:"
-    echo -e "  前端访问端口: ${GREEN}${FRONTEND_PORT}${NC}"
-    echo -e "  后端 API 端口: ${GREEN}${BACKEND_PORT}${NC}"
-    echo ""
-    echo -e "MySQL Root 密码: ${GREEN}${MYSQL_PASSWORD}${NC}"
-    echo ""
-    read -p "是否继续安装? (Y/n): " confirm
-    if [[ "$confirm" =~ ^[Nn]$ ]]; then
-        log_info "安装已取消"
-        exit 0
+# 辅助函数：等待容器就绪
+wait_for_container() {
+    log_info "正在等待服务启动并连接数据库（最多等待 60 秒）..."
+    local count=0
+    while [ $count -lt 60 ]; do
+        if docker compose exec -T $COMPOSE_SVC python -c "import django; django.setup(); from django.contrib.auth.models import User; print('ready')" &>/tmp/cp_init_check.log; then
+            break
+        fi
+        sleep 1
+        count=$((count + 1))
+    done
+    
+    if [ $count -ge 60 ]; then
+        log_error "服务启动超时，请检查日志: docker logs $SERVICE_CONTAINER"
+        exit 1
+    fi
+    log_info "数据库连接成功"
+}
+
+# 辅助函数：执行 Django 命令
+run_django_command() {
+    local cmd="$1"
+    docker compose exec -T $COMPOSE_SVC $cmd || log_warn "警告: 执行命令 $cmd 失败"
+}
+
+# 辅助函数：创建默认管理员
+init_admin() {
+    log_info "正在创建默认管理员账户 (admin/admin123)..."
+    
+    # 检查用户是否存在
+    local check_cmd="import django; django.setup(); from django.contrib.auth.models import User; print(User.objects.filter(username='admin').exists())"
+    local exists=$(docker compose exec -T $COMPOSE_SVC python -c "$check_cmd" 2>/dev/null)
+
+    if [ "$exists" != "True" ]; then
+        log_info "创建管理员..."
+        docker compose exec -T $COMPOSE_SVC python -c "
+# 自动建用户不打印任何多余提示
+import django; django.setup()
+from django.contrib.auth.models import User
+try:
+    User.objects.create_superuser('admin', 'admin@admin.com', 'admin123')
+    print('SUCCESS')
+except Exception as e:
+    print(f'ERROR: {e}')
+" 2>/dev/null || true
+    else
+        log_info "管理员账号已存在，跳过创建"
     fi
 }
 
-# 部署 CloudPanel
-deploy() {
-    cd "$INSTALL_DIR"
-
-    log_step "启动 CloudPanel..."
-    $COMPOSE_CMD up -d
-
-    echo ""
-    log_info "等待服务启动..."
-    sleep 15
-
-    # 检查服务状态
-    echo ""
-    log_step "服务状态:"
-    $COMPOSE_CMD ps
-}
-
-# 显示安装信息
-show_info() {
+# 打印成功信息
+show_success() {
+    local SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || echo "<YourServerIP>")
     echo ""
     echo -e "${GREEN}======================================${NC}"
     echo -e "${GREEN}  CloudPanel 安装完成!${NC}"
     echo -e "${GREEN}======================================${NC}"
-    echo ""
-    echo -e "访问地址:"
-    echo -e "  ${BLUE}前端:${NC} http://<你的服务器IP>:${FRONTEND_PORT}"
-    echo -e "  ${BLUE}管理后台:${NC} http://<你的服务器IP>:${BACKEND_PORT}/api/admin"
-    echo ""
-    echo -e "管理命令:"
-    echo -e "  ${BLUE}创建管理员:${NC}"
-    echo -e "    cd ${INSTALL_DIR}"
-    echo -e "    docker exec -it cloudpanel-api python manage.py createsuperuser"
-    echo ""
-    echo -e "  ${BLUE}查看日志:${NC}"
-    echo -e "    cd ${INSTALL_DIR}"
-    echo -e "    $COMPOSE_CMD logs -f api"
-    echo ""
-    echo -e "  ${BLUE}重启服务:${NC}"
-    echo -e "    cd ${INSTALL_DIR}"
-    echo -e "    $COMPOSE_CMD restart"
-    echo ""
-    echo -e "  ${BLUE}更新服务:${NC}"
-    echo -e "    cd ${INSTALL_DIR}"
-    echo -e "    $COMPOSE_CMD pull && $COMPOSE_CMD up -d"
-    echo ""
-    echo -e "  ${BLUE}停止服务:${NC}"
-    echo -e "    cd ${INSTALL_DIR}"
-    echo -e "    $COMPOSE_CMD down"
-    echo ""
-    echo -e "${YELLOW}提示:${NC} 首次访问请创建管理员账户"
-    echo ""
-}
-
-# 主函数
-main() {
-    echo ""
+    echo -e "  访问地址: ${BLUE}http://${SERVER_IP}:8086${NC}"
+    echo -e "  管理后台: ${BLUE}http://${SERVER_IP}:8111/api/admin${NC}"
+    echo -e "  默认账号: ${YELLOW}admin${NC}"
+    echo -e "  默认密码: ${YELLOW}admin123${NC}"
     echo -e "${GREEN}======================================${NC}"
-    echo -e "${GREEN}  CloudPanel 一键安装脚本${NC}"
-    echo -e "${GREEN}======================================${NC}"
-    echo ""
-
-    check_root
-    detect_os
-    install_docker
-    install_compose
-    create_directories
-    download_configs
-    generate_env
-    interactive_config
-    deploy
-    show_info
 }
 
-# 帮助
-show_help() {
-    echo "CloudPanel 一键安装脚本"
-    echo ""
-    echo "用法:"
-    echo "  $0 [选项]"
-    echo ""
-    echo "选项:"
-    echo "  -h, --help        显示此帮助信息"
-    echo "  -d, --dir DIR     指定安装目录 (默认: /opt/cloudpanel)"
-    echo "  -f, --frontend PORT  前端端口 (默认: 8086)"
-    echo "  -b, --backend PORT   后端端口 (默认: 8111)"
-    echo ""
-    echo "示例:"
-    echo "  $0                    # 默认安装"
-    echo "  $0 -d /my/cloudpanel  # 自定义安装目录"
-    echo "  $0 -f 80 -b 443       # 自定义端口"
-    echo ""
-}
+# ------------------------------------------
+# 主程序入口 - 解析参数
+# ------------------------------------------
 
-# 解析参数
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        -h|--help)
-            show_help
-            exit 0
-            ;;
-        -d|--dir)
-            INSTALL_DIR="$2"
-            shift 2
-            ;;
-        -f|--frontend)
-            FRONTEND_PORT="$2"
-            shift 2
-            ;;
-        -b|--backend)
-            BACKEND_PORT="$2"
-            shift 2
-            ;;
-        *)
-            log_error "未知参数: $1"
-            show_help
-            exit 1
-            ;;
-    esac
-done
+ACTION="${1}"
 
-main
+case "$ACTION" in
+    uninstall)
+        do_uninstall
+        ;;
+    update)
+        do_update
+        ;;
+    *)
+        do_install
+        ;;
+esac
