@@ -1,25 +1,6 @@
-
 version: '3.8'
 
 services:
-  mysql:
-    image: mysql:lts-oraclelinux9
-    container_name: panel_mysql
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: panel
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    volumes:
-      - ./data/mysql:/var/lib/mysql
-    networks:
-      - panel_network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   redis:
     image: redis:latest
     container_name: panel_redis
@@ -52,26 +33,13 @@ services:
     restart: always
     ports:
       - "${BACKENDPORT:-8111}:8111"
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     networks:
       - panel_network
     volumes:
+      - ./data/db.sqlite3:/home/python/panel/db.sqlite3
       - ./logs:/home/python/panel/logs
     env_file:
       - .env
-    # environment:
-    #   - DJANGO_SETTINGS_MODULE=panelProject.settings
-    #   - MYSQL_HOST=mysql
-    #   - MYSQL_PORT=3306
-    #   - MYSQL_DATABASE=panel
-    #   - MYSQL_USER=root
-    #   - MYSQL_PASSWORD=root
-    #   - REDIS_HOST=redis
-    #   - REDIS_PORT=6379
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8111/health/"]
       interval: 30s

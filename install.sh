@@ -196,7 +196,7 @@ do_install() {
     fi
 
     log_step "创建目录: $INSTALL_DIR"
-    mkdir -p "$INSTALL_DIR"/{data/mysql,data/redis,logs}
+    mkdir -p "$INSTALL_DIR"/{data,logs}
 
     log_step "下载配置文件..."
     local BASE_URL="https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/heads/main"
@@ -205,10 +205,8 @@ do_install() {
         exit 1
     }
 
-    # 生成 .env
     log_step "生成 .env 配置文件..."
     local SECRET_KEY=$(openssl rand -base64 48 2>/dev/null || python3 -c "import secrets; print(secrets.token_urlsafe(50))")
-    local MYSQL_PASSWORD=$(openssl rand -base64 12 | tr -d "=+/" | cut -c1-16)
 
     cat > "$INSTALL_DIR/.env" << EOF
 # CloudPanel 自动生成的配置文件
@@ -216,13 +214,6 @@ do_install() {
 
 DEBUG=0
 DJANGO_SETTINGS_MODULE=panelProject.settings
-
-# MySQL配置
-MYSQL_HOST=mysql
-MYSQL_PORT=3306
-MYSQL_DATABASE=panel
-MYSQL_USER=root
-MYSQL_PASSWORD=${MYSQL_PASSWORD}
 
 # Redis配置
 REDIS_HOST=redis
@@ -261,9 +252,9 @@ EOF
 
 # 辅助函数：等待容器就绪
 wait_for_container() {
-    log_info "正在等待服务启动并连接数据库（最多等待 60 秒）..."
+    log_info "正在等待服务启动（最多等待 30 秒）..."
     local count=0
-    while [ $count -lt 60 ]; do
+    while [ $count -lt 30 ]; do
         if docker compose exec -T $COMPOSE_SVC python -c "import django; django.setup(); from django.contrib.auth.models import User; print('ready')" &>/tmp/cp_init_check.log; then
             break
         fi
@@ -271,11 +262,11 @@ wait_for_container() {
         count=$((count + 1))
     done
     
-    if [ $count -ge 60 ]; then
+    if [ $count -ge 30 ]; then
         log_error "服务启动超时，请检查日志: docker logs $SERVICE_CONTAINER"
         exit 1
     fi
-    log_info "数据库连接成功"
+    log_info "服务启动成功"
 }
 
 # 辅助函数：执行 Django 命令
