@@ -15,6 +15,7 @@ done
 echo "Redis is ready!"
 
 # 执行数据库迁移
+python manage.py collectstatic --noinput
 python manage.py migrate
 
 # 启动 supervisor

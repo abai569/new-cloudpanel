@@ -15,13 +15,19 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.http import JsonResponse
+from django.shortcuts import redirect
 from django.urls import path, include
 
 
 def health(request):
     return JsonResponse({'status': 'ok'})
 
+
+def index(request):
+    return redirect('/api/admin/')
+
 urlpatterns = [
+    path('', index),
     path('health/', health),
 
     # 后台
