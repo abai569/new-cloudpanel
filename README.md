@@ -21,11 +21,14 @@ bash <(curl -L https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/hea
 
 **更多命令：**
 
-| 命令 | 说明 |
-|------|------|
-| `bash <(curl -L https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/heads/main/install.sh)` | 全新安装 |
-| `bash <(curl -L https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/heads/main/install.sh) update` | 一键升级更新 |
-| `bash <(curl -L https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/heads/main/install.sh) uninstall` | 一键卸载 |
+一键升级
+```bash
+bash <(curl -L https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/heads/main/install.sh) update
+```
+一键卸载
+```bash
+bash <(curl -L https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/heads/main/install.sh) uninstall
+```
 
 ### 手动部署
 
