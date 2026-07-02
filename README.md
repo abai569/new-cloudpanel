@@ -8,101 +8,28 @@ CloudPanel 是一个强大的多云服务管理平台，支持管理和监控多
 
 ### 一键安装（推荐）
 
-使用自动安装脚本可完成 Docker 安装、环境配置和服务部署：
+只需一行命令，脚本将自动完成 Docker 安装、环境配置、服务启动，并自动创建默认管理员账号。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/heads/main/install.sh | bash
+bash <(curl -L https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/heads/main/install.sh)
 ```
 
-或下载后运行：
+**安装完成后：**
+*   访问地址: `http://<你的服务器IP>:8086`
+*   默认账号: `admin`
+*   默认密码: `admin123`
 
-```bash
-chmod +x install.sh && ./install.sh
-```
+**更多命令：**
 
-**自定义参数：**
-```bash
-./install.sh -d /opt/cloudpanel -f 8080 -b 9090
-```
-
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `-d` | 安装目录 | `/opt/cloudpanel` |
-| `-f` | 前端端口 | `8086` |
-| `-b` | 后端端口 | `8111` |
+| 命令 | 说明 |
+|------|------|
+| `bash <(curl -L https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/heads/main/install.sh)` | 全新安装 |
+| `bash <(curl -L https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/heads/main/install.sh) update` | 一键升级更新 |
+| `bash <(curl -L https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/heads/main/install.sh) uninstall` | 一键卸载 |
 
 ### 手动部署
 
-使用 Docker Compose 本地构建部署：
-
-#### 1. 部署项目文件夹：
-```bash
-mkdir cloudpanel
-```
-
-#### 2. 创建必要的目录：
-
-```bash
-cd cloudpanel && mkdir -p data/mysql data/redis logs
-```
-
-#### 3. 下载配置文件
-```bash
-wget https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/heads/main/docker-compose.yml -O docker-compose.yml  
-```
-
-#### 4. 配置环境变量：
-
-```bash
-wget https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/heads/main/.env.example -O .env   
-
-vim .env
-```
-
-环境变量配置示例：
-```bash
-# 安全设置 - 请生成随机密钥
-DJANGO_SECRET_KEY=your-secret-key-here
-
-# 数据库密码
-MYSQL_PASSWORD=your-strong-password
-
-# 端口设置
-FRONTENDPORT=8086
-BACKENDPORT=8111
-```
-
-#### 5. 部署前准备工作
-##### 安装Docker、Docker Compose
-```bash
-apt update -y && apt install -y curl && curl -fsSL https://get.docker.com | bash -s docker
-
-curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose
-```
-#### 6. 运行部署命令
-```bash
-docker-compose up -d
-```
-#### 7. 查看默认用户名、密码
-
-```bash
-docker logs cloudpanel-api
-```
-
-### 其他操作
-#### 1. 创建管理员账户：
-
-```bash
-docker exec -it cloudpanel-api python manage.py createsuperuser
-```
-
-#### 2. 初始化 AWS 镜像数据（可选）：
-
-```bash
-python manage.py aws_update_images
-```
-
-### GitHub Container Registry
+...（保留后续内容）
 
 镜像推送到 GitHub Container Registry (ghcr.io)。
 
