@@ -13,10 +13,8 @@ CloudPanel 是一个强大的多云服务管理平台，支持管理和监控多
 ```bash
 # 自动安装到默认目录 (/opt/cloudpanel)
 curl -fsSL https://raw.githubusercontent.com/Nodewebzsz/cloudpanel/refs/heads/main/install.sh | bash
-
-# 或下载后运行
-chmod +x install.sh && ./install.sh
 ```
+
 ```bash
 # 或下载后运行
 wget -O /opt/cloudpanel https://raw.githubusercontent.com/Nodewebzsz/cloudpanel/refs/heads/main/install.sh | bash
