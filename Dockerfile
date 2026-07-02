@@ -1,7 +1,7 @@
 FROM --platform=$TARGETPLATFORM python:3.9-slim
 
-LABEL maintainer="Nodewebzsz <zszxcken@gmail.com>"
-LABEL org.opencontainers.image.source="https://github.com/Nodewebzsz/cloudpanel"
+LABEL maintainer="abai569"
+LABEL org.opencontainers.image.source="https://github.com/abai569/new-cloudpanel"
 LABEL org.opencontainers.image.description="CloudPanel - 多云服务管理平台"
 
 # 设置环境变量以减少Python生成的.pyc文件

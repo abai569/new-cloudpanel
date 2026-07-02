@@ -18,7 +18,7 @@ NC='\033[0m'
 INSTALL_DIR="/opt/cloudpanel"
 FRONTEND_PORT=8086
 BACKEND_PORT=8111
-GITHUB_REPO="Nodewebzsz/cloudpanel"
+GITHUB_REPO="abai569/new-cloudpanel"
 BRANCH="main"
 
 # 日志函数
