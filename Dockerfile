@@ -20,6 +20,7 @@ RUN apt-get update \
         nano \
         gcc \
         make \
+        netcat-traditional \
     && rm -rf /var/lib/apt/lists/* \
     && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     && mkdir -p /home/python \
