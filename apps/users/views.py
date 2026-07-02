@@ -66,7 +66,7 @@ def Info(request):
     if not userinfo:
         return JsonResponse({'code': 50008, 'message': '用户信息不存在，请重新登录'})
     data = {
-        'avatar': 'https://t1.picb.cc/uploads/2021/10/05/wXMX1y.th.jpg',
+        'avatar': '/logo.png',
         'name': userinfo.username,
         'username': userinfo.username,
         'create_time': userinfo.date_joined.strftime("%Y-%m-%d %H:%M:%S"),
@@ -109,7 +109,7 @@ def Profile(request):
     if not userinfo:
         return JsonResponse({'code': 50008, 'message': '用户信息不存在，请重新登录'})
     data = {
-        'avatar': '',
+        'avatar': '/logo.png',
         'name': userinfo.username,
         'username': userinfo.username,
         'email': userinfo.email,
