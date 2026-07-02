@@ -16,14 +16,13 @@ services:
       retries: 5
 
   web:
-    image: kissyouhunter/cloudpanel:web
+    image: ghcr.io/abai569/new-cloudpanel/web:${IMAGE_TAG:-latest}
     container_name: cloudpanel-web
     restart: always
     ports:
-        - "${FRONTENDPORT:-8086}:8080"
+        - "${FRONTENDPORT:-8086}:80"
     depends_on:
         - api
-    command: ['nginx', '-g', 'daemon off;']
     networks:
         - panel_network
 
