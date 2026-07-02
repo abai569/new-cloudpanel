@@ -162,6 +162,12 @@ do_update() {
         log_error "下载 docker-compose.yml 失败"
         exit 1
     }
+
+    mkdir -p config
+    curl -fsSL "${BASE_URL}/config/nginx.conf" -o config/nginx.conf || {
+        log_error "下载 nginx.conf 失败"
+        exit 1
+    }
     
     log_info "正在拉取最新镜像..."
     docker compose pull
@@ -207,12 +213,17 @@ do_install() {
     fi
 
     log_step "创建目录: $INSTALL_DIR"
-    mkdir -p "$INSTALL_DIR"/{data,logs}
+    mkdir -p "$INSTALL_DIR"/{data,logs,config}
 
     log_step "下载配置文件..."
     local BASE_URL="https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/heads/main"
     curl -fsSL "${BASE_URL}/docker-compose.yml" -o "$INSTALL_DIR/docker-compose.yml" || {
         log_error "下载 docker-compose.yml 失败"
+        exit 1
+    }
+
+    curl -fsSL "${BASE_URL}/config/nginx.conf" -o "$INSTALL_DIR/config/nginx.conf" || {
+        log_error "下载 nginx.conf 失败"
         exit 1
     }
 
