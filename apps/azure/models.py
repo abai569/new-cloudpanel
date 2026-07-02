@@ -133,10 +133,10 @@ class Account(models.Model):
     @classmethod
     def image_list(cls, name=''):
         _list = {
-            'Canonical:ubuntu-24_04-lts:server:latest': 'Ubuntu 24.04 LTS',
-            'Canonical:0001-com-ubuntu-server-jammy:22_04-lts:latest': 'Ubuntu 22.04 LTS',
             'Debian:debian-13:13:latest': 'Debian 13',
             'Debian:debian-12:12:latest': 'Debian 12',
+            'Canonical:ubuntu-24_04-lts:server:latest': 'Ubuntu 24.04 LTS',
+            'Canonical:0001-com-ubuntu-server-jammy:22_04-lts:latest': 'Ubuntu 22.04 LTS',
         }
         if name in '': return _list
         return _list.get(name)

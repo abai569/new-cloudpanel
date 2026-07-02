@@ -1,119 +1,100 @@
 from django.core.management.base import BaseCommand
-from apps.aws.models import Ec2Images, Account
-from libs.aws import AwsApi
+from apps.aws.models import Ec2Images
 
-
-IMAGE_QUERIES = [
-    ('Ubuntu 24.04 LTS', '099720109477', 'ubuntu/images/*/ubuntu-noble-24.04-amd64-server-*'),
-    ('Ubuntu 22.04 LTS', '099720109477', 'ubuntu/images/*/ubuntu-jammy-22.04-amd64-server-*'),
-    ('Debian 13', '136693071363', 'debian-13-*'),
-    ('Debian 12', '136693071363', 'debian-12-*'),
-]
 
 STATIC_IMAGES = [
-    ('Ubuntu 24.04 LTS', 'ami-0d6b1913edac0f379', 'ap-northeast-1'),
-    ('Ubuntu 22.04 LTS', 'ami-07c7e04902bf289d3', 'ap-northeast-1'),
-    ('Debian 12', 'ami-005f60e1d45e94295', 'ap-northeast-1'),
-    ('Ubuntu 24.04 LTS', 'ami-0a1e932e32433eab3', 'ap-southeast-1'),
-    ('Ubuntu 22.04 LTS', 'ami-04731386031bf42a0', 'ap-southeast-1'),
-    ('Debian 12', 'ami-04e3fbacff3c69d76', 'ap-southeast-1'),
-    ('Ubuntu 24.04 LTS', 'ami-04b70fa74eebaf0b8', 'us-east-1'),
-    ('Ubuntu 22.04 LTS', 'ami-080e12f04d64e9d60', 'us-east-1'),
-    ('Debian 12', 'ami-0eab7f7272015e6f3', 'us-east-1'),
-    ('Ubuntu 24.04 LTS', 'ami-04242e7eaf3ae699e', 'eu-west-1'),
-    ('Ubuntu 22.04 LTS', 'ami-0c3996e77be06549b', 'eu-west-1'),
-    ('Debian 12', 'ami-07976520a94fa5a81', 'eu-west-1'),
-    ('Ubuntu 24.04 LTS', 'ami-04b8631283aa63524', 'us-west-2'),
-    ('Ubuntu 22.04 LTS', 'ami-01650547f28e84c8c', 'us-west-2'),
-    ('Debian 12', 'ami-0ea3b65ee55bcfd28', 'us-west-2'),
-    ('Ubuntu 24.04 LTS', 'ami-053eec3a534325f3d', 'ap-south-1'),
-    ('Ubuntu 22.04 LTS', 'ami-0a03b38c94424cf83', 'ap-south-1'),
-    ('Debian 12', 'ami-0a3cd20ddbd5b169b', 'ap-south-1'),
-    ('Ubuntu 24.04 LTS', 'ami-03e6633f4e9382fcc', 'ap-northeast-2'),
-    ('Ubuntu 22.04 LTS', 'ami-08b775db022a55aca', 'ap-northeast-2'),
-    ('Debian 12', 'ami-0680e867fd8d6a449', 'ap-northeast-2'),
-    ('Ubuntu 24.04 LTS', 'ami-0fcf56edd656cdda3', 'eu-central-1'),
-    ('Ubuntu 22.04 LTS', 'ami-076c69035370ad2e1', 'eu-central-1'),
-    ('Debian 12', 'ami-01c42582923d63551', 'eu-central-1'),
-    ('Ubuntu 24.04 LTS', 'ami-03020643ea6faae3e', 'ap-southeast-2'),
-    ('Ubuntu 22.04 LTS', 'ami-0d135c42158e6e9c7', 'ap-southeast-2'),
-    ('Debian 12', 'ami-0c5af48af4106dfad', 'ap-southeast-2'),
+    ('Debian 13', 'ami-00a4a57f8373eb2e5', 'ap-east-1'),
+    ('Debian 12', 'ami-0075a7bdb350e254a', 'ap-east-1'),
+    ('Ubuntu 24.04 LTS', 'ami-061fab4c2d0401056', 'ap-east-1'),
+    ('Ubuntu 22.04 LTS', 'ami-0848490378b88b932', 'ap-east-1'),
+    ('Debian 13', 'ami-0990bacef65633fdf', 'ap-east-2'),
+    ('Debian 12', 'ami-082c1bf0083d97dc9', 'ap-east-2'),
+    ('Ubuntu 24.04 LTS', 'ami-035615086a1f485e9', 'ap-east-2'),
+    ('Ubuntu 22.04 LTS', 'ami-00430e56a3ae78abf', 'ap-east-2'),
+    ('Debian 13', 'ami-04c4d7c5f80db97af', 'ap-northeast-1'),
+    ('Debian 12', 'ami-0ac06e0f029de7270', 'ap-northeast-1'),
+    ('Ubuntu 24.04 LTS', 'ami-04ae19f2563b23082', 'ap-northeast-1'),
+    ('Ubuntu 22.04 LTS', 'ami-03873003744ddc492', 'ap-northeast-1'),
+    ('Debian 13', 'ami-0c4d503d8e83c3baf', 'ap-northeast-2'),
+    ('Debian 12', 'ami-010bc85bdf41ced6a', 'ap-northeast-2'),
+    ('Ubuntu 24.04 LTS', 'ami-08d212701172cba2a', 'ap-northeast-2'),
+    ('Ubuntu 22.04 LTS', 'ami-068550d7714642b14', 'ap-northeast-2'),
+    ('Debian 13', 'ami-0ca99b933239caa2f', 'ap-northeast-3'),
+    ('Debian 12', 'ami-046d95e13bb5c407e', 'ap-northeast-3'),
+    ('Ubuntu 24.04 LTS', 'ami-07ee67a3ee71e6b12', 'ap-northeast-3'),
+    ('Ubuntu 22.04 LTS', 'ami-073f094b1e60bb5cc', 'ap-northeast-3'),
+    ('Debian 13', 'ami-0292ebfc59e999fdf', 'ap-south-1'),
+    ('Debian 12', 'ami-094b5b539e1023ba3', 'ap-south-1'),
+    ('Ubuntu 24.04 LTS', 'ami-089271895175de1ff', 'ap-south-1'),
+    ('Ubuntu 22.04 LTS', 'ami-0824445bc4bd4e528', 'ap-south-1'),
+    ('Debian 13', 'ami-07a5aa079f90dc641', 'ap-southeast-1'),
+    ('Debian 12', 'ami-09391f71eb6701f40', 'ap-southeast-1'),
+    ('Ubuntu 24.04 LTS', 'ami-0a6a4c524bc36f8f1', 'ap-southeast-1'),
+    ('Ubuntu 22.04 LTS', 'ami-0659642169bf1b4b2', 'ap-southeast-1'),
+    ('Debian 13', 'ami-03f509097e69b9b51', 'ap-southeast-2'),
+    ('Debian 12', 'ami-019b1ea56fcbc56f7', 'ap-southeast-2'),
+    ('Ubuntu 24.04 LTS', 'ami-07e1ec3ae966d34c6', 'ap-southeast-2'),
+    ('Ubuntu 22.04 LTS', 'ami-0111f46977d33b84b', 'ap-southeast-2'),
+    ('Debian 13', 'ami-0efceefedaf18d384', 'ap-southeast-5'),
+    ('Debian 12', 'ami-06fa5cfdc7a56a65e', 'ap-southeast-5'),
+    ('Ubuntu 24.04 LTS', 'ami-03346c3b3a13677fa', 'ap-southeast-5'),
+    ('Ubuntu 22.04 LTS', 'ami-02b4907e4bd874327', 'ap-southeast-5'),
+    ('Debian 13', 'ami-0937f308f7b522a7a', 'ca-central-1'),
+    ('Debian 12', 'ami-0b1a09b138bd2446e', 'ca-central-1'),
+    ('Ubuntu 24.04 LTS', 'ami-024208b0e77830ebe', 'ca-central-1'),
+    ('Ubuntu 22.04 LTS', 'ami-00148f65a52241886', 'ca-central-1'),
+    ('Debian 13', 'ami-039500bd90796b9aa', 'eu-central-1'),
+    ('Debian 12', 'ami-083a5eed4bc18561c', 'eu-central-1'),
+    ('Ubuntu 24.04 LTS', 'ami-0596cf3199908321b', 'eu-central-1'),
+    ('Ubuntu 22.04 LTS', 'ami-074dd8e8dac7651a5', 'eu-central-1'),
+    ('Debian 13', 'ami-077e795f32a56da75', 'eu-north-1'),
+    ('Debian 12', 'ami-0c820880d0f4e2101', 'eu-north-1'),
+    ('Ubuntu 24.04 LTS', 'ami-0122da1d0b4a30ec4', 'eu-north-1'),
+    ('Ubuntu 22.04 LTS', 'ami-0a4640f53fa171eb4', 'eu-north-1'),
+    ('Debian 13', 'ami-025a52ae88f2e370e', 'eu-west-1'),
+    ('Debian 12', 'ami-082d899c72222b228', 'eu-west-1'),
+    ('Ubuntu 24.04 LTS', 'ami-07dcad2e028cc44c9', 'eu-west-1'),
+    ('Ubuntu 22.04 LTS', 'ami-0651fd5b99debb0f4', 'eu-west-1'),
+    ('Debian 13', 'ami-036529711fc1e0a41', 'eu-west-2'),
+    ('Debian 12', 'ami-0d7e4fc9aca3e1cd2', 'eu-west-2'),
+    ('Ubuntu 24.04 LTS', 'ami-0951a43515d1f167b', 'eu-west-2'),
+    ('Ubuntu 22.04 LTS', 'ami-052c9005e24cd7236', 'eu-west-2'),
+    ('Debian 13', 'ami-017c2f828c09e9470', 'eu-west-3'),
+    ('Debian 12', 'ami-073ef04c366723b30', 'eu-west-3'),
+    ('Ubuntu 24.04 LTS', 'ami-00a83823b51dbd7a2', 'eu-west-3'),
+    ('Ubuntu 22.04 LTS', 'ami-06ad61471e4e8eedc', 'eu-west-3'),
+    ('Debian 13', 'ami-0a0164757be44e683', 'sa-east-1'),
+    ('Debian 12', 'ami-085fa441189b806d2', 'sa-east-1'),
+    ('Ubuntu 24.04 LTS', 'ami-01f4c1893b7b17a94', 'sa-east-1'),
+    ('Ubuntu 22.04 LTS', 'ami-03135d413c1dad6be', 'sa-east-1'),
+    ('Debian 13', 'ami-0dedb4478c09e1ae7', 'us-east-1'),
+    ('Debian 12', 'ami-0f6ac146eef885446', 'us-east-1'),
+    ('Ubuntu 24.04 LTS', 'ami-0462ececcfe0a450f', 'us-east-1'),
+    ('Ubuntu 22.04 LTS', 'ami-00e1181affe35cfd8', 'us-east-1'),
+    ('Debian 13', 'ami-0e80837acd137142b', 'us-east-2'),
+    ('Debian 12', 'ami-048d67dc0159823d6', 'us-east-2'),
+    ('Ubuntu 24.04 LTS', 'ami-06e3c045d79fd65d9', 'us-east-2'),
+    ('Ubuntu 22.04 LTS', 'ami-096a2911074929e0b', 'us-east-2'),
+    ('Debian 13', 'ami-08fd0bf44a72751c9', 'us-west-1'),
+    ('Debian 12', 'ami-0325248aa1942ab93', 'us-west-1'),
+    ('Ubuntu 24.04 LTS', 'ami-06b527a1e4cb6f265', 'us-west-1'),
+    ('Ubuntu 22.04 LTS', 'ami-0316a663dce433167', 'us-west-1'),
+    ('Debian 13', 'ami-041bdae65d384227b', 'us-west-2'),
+    ('Debian 12', 'ami-0863968f8acb422f5', 'us-west-2'),
+    ('Ubuntu 24.04 LTS', 'ami-03e8b457f40561815', 'us-west-2'),
+    ('Ubuntu 22.04 LTS', 'ami-0640ac12c85f21746', 'us-west-2'),
 ]
 
 
 class Command(BaseCommand):
-    help = 'Import EC2 AMI images from AWS dynamically, with static fallback'
-
-    def add_arguments(self, parser):
-        parser.add_argument(
-            '--clear',
-            action='store_true',
-            help='Clear all existing images before importing',
-        )
+    help = 'Import EC2 AMI images (static hardcoded list)'
 
     def handle(self, *args, **options):
-        if options.get('clear'):
-            count = Ec2Images.objects.all().delete()[0]
-            self.stdout.write(self.style.WARNING(f'Cleared {count} existing images.'))
-
-        account = Account.objects.filter(status=True).first()
-        if account:
-            self._update_dynamic(account.key_id, account.secret)
-        else:
-            self.stdout.write(self.style.WARNING('No active AWS account found, using static AMI list.'))
-            self._update_static()
-
-    def _update_dynamic(self, key_id, key_secret):
-        self.stdout.write('Fetching Debian 12/13 + Ubuntu 22.04/24.04 AMI per region ...')
-
-        aApi = AwsApi(key_id, key_secret)
-        aApi.region = 'us-east-1'
-        aApi.start('ec2')
-
-        try:
-            regions_resp = aApi.client.describe_regions()
-            regions = [r['RegionName'] for r in regions_resp['Regions']]
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Failed to get regions: {e}. Falling back to static list.'))
-            self._update_static()
-            return
-
-        total = 0
-
-        for display_name, owner_id, name_filter in IMAGE_QUERIES:
-            for region in regions:
-                try:
-                    aApi.region = region
-                    aApi.start('ec2')
-
-                    paginator = aApi.client.get_paginator('describe_images')
-                    for page in paginator.paginate(
-                        Owners=[owner_id],
-                        Filters=[
-                            {'Name': 'name', 'Values': [name_filter]},
-                            {'Name': 'state', 'Values': ['available']},
-                            {'Name': 'virtualization-type', 'Values': ['hvm']},
-                            {'Name': 'root-device-type', 'Values': ['ebs']},
-                        ],
-                    ):
-                        for image in page.get('Images', []):
-                            self._save(image['ImageId'], display_name, region)
-                            total += 1
-                            break
-                except Exception:
-                    continue
-
-        self.stdout.write(self.style.SUCCESS(f'Updated {total} AMI images from AWS.'))
-
-    def _update_static(self):
         total = 0
         for name, ami, region in STATIC_IMAGES:
-            self._save(ami, name, region)
+            Ec2Images.objects.update_or_create(
+                ami=ami,
+                defaults={'name': name, 'region': region},
+            )
             total += 1
-        self.stdout.write(self.style.SUCCESS(f'Loaded {total} static AMI images.'))
-
-    def _save(self, ami, name, region):
-        Ec2Images.objects.update_or_create(
-            ami=ami,
-            defaults={'name': name, 'region': region},
-        )
+        self.stdout.write(self.style.SUCCESS(f'Loaded {total} AMI images.'))

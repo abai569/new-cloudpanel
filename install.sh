@@ -185,8 +185,8 @@ do_update() {
     log_step "正在等待服务就绪..."
     wait_for_container
 
-    log_info "正在初始化数据变更..."
-    run_django_command "python manage.py aws_update_images --clear"
+    log_info "正在初始化 AMI 镜像..."
+    run_django_command "python manage.py aws_update_images"
 
     echo ""
     echo -e "${GREEN}CloudPanel 升级完成！${NC}"
@@ -291,9 +291,9 @@ EOF
 
 # 辅助函数：等待容器就绪
 wait_for_container() {
-    log_info "正在等待服务启动（最多等待 120 秒）..."
+    log_info "正在等待服务启动（最多等待 30 秒）..."
     local count=0
-    while [ $count -lt 120 ]; do
+    while [ $count -lt 30 ]; do
         if curl -sf http://localhost:${BACKENDPORT:-889}/health/ &>/dev/null; then
             break
         fi
@@ -301,7 +301,7 @@ wait_for_container() {
         count=$((count + 1))
     done
     
-    if [ $count -ge 120 ]; then
+    if [ $count -ge 30 ]; then
         log_error "服务启动超时，请检查日志: docker logs $SERVICE_CONTAINER"
         exit 1
     fi

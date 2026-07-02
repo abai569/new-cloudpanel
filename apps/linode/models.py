@@ -165,10 +165,10 @@ class Vm(models.Model):
     type = models.CharField('实例规格', max_length=20, choices=type_choices, blank=True)
 
     images_choices = (
-        ('linode/debian12', 'Debian 12'),
         ('linode/debian13', 'Debian 13'),
-        ('linode/ubuntu22.04', 'Ubuntu 22.04 LTS'),
+        ('linode/debian12', 'Debian 12'),
         ('linode/ubuntu24.04', 'Ubuntu 24.04 LTS'),
+        ('linode/ubuntu22.04', 'Ubuntu 22.04 LTS'),
     )
 
     image = models.CharField('镜像地址', max_length=50, choices=images_choices, blank=True)
