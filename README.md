@@ -1,26 +1,16 @@
 # CloudPanel
 
 [![Docker Image CI/CD](https://github.com/Nodewebzsz/cloudpanel/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/Nodewebzsz/cloudpanel/actions/workflows/docker-publish.yml)
-[![Docker Pulls](https://img.shields.io/docker/pulls/zszken/cloudpanel)](https://hub.docker.com/r/zszken/cloudpanel)
 
 CloudPanel 是一个强大的多云服务管理平台，支持管理和监控多个主流云服务提供商的资源。通过统一的界面，轻松管理 AWS、Azure、DigitalOcean 和 Linode 等云服务资源。
 
-## Docker 镜像
+### GitHub Container Registry
 
-最新版本的 Docker 镜像可以从 Docker Hub 获取：
+镜像推送到 GitHub Container Registry (ghcr.io)，Docker 会自动检测架构并拉取对应镜像。
 
 ```bash
-docker pull zszken/cloudpanel:latest
+docker pull ghcr.io/nodewebzsz/cloudpanel:latest
 ```
-
-支持的标签：
-- `latest`: 最新稳定版本
-- `x.y.z`: 特定版本号
-- `x.y`: 特定主要版本
-
-### 多架构支持
-
-本项目支持在 AMD64 和 ARM64 架构上运行。Docker 会**自动检测**宿主机架构并拉取对应镜像，无需手动配置。
 
 ## 功能特点
 
