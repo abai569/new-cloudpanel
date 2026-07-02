@@ -263,7 +263,7 @@ IMAGE_TAG=latest
 
 # 端口设置
 FRONTENDPORT=8086
-BACKENDPORT=8111
+BACKENDPORT=889
 
 # Gunicorn配置，低配机器建议保持2或1
 GUNICORN_WORKERS=2
@@ -294,7 +294,7 @@ wait_for_container() {
     log_info "正在等待服务启动（最多等待 120 秒）..."
     local count=0
     while [ $count -lt 120 ]; do
-        if curl -sf http://localhost:8000/health/ &>/dev/null; then
+        if curl -sf http://localhost:${BACKENDPORT:-889}/health/ &>/dev/null; then
             break
         fi
         sleep 1
@@ -375,7 +375,7 @@ show_success() {
     echo -e "${GREEN}  CloudPanel 安装完成!${NC}"
     echo -e "${GREEN}======================================${NC}"
     echo -e "  访问地址: ${BLUE}http://${SERVER_IP}:8086${NC}"
-    echo -e "  管理后台: ${BLUE}http://${SERVER_IP}:8111/api/admin${NC}"
+    echo -e "  管理后台: ${BLUE}http://${SERVER_IP}:${FRONTENDPORT:-8086}/${NC}"
     echo -e "  默认账号: ${YELLOW}admin${NC}"
     echo -e "  默认密码: ${YELLOW}admin123${NC}"
     echo -e "${GREEN}======================================${NC}"
