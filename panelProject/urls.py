@@ -15,6 +15,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.db import connection
+
+admin.site.site_header = 'CloudPanel 管理后台'
+admin.site.site_title = 'CloudPanel'
+admin.site.index_title = ''
 from django.db.utils import DatabaseError
 from django.http import JsonResponse
 from django.shortcuts import redirect
