@@ -1,8 +1,10 @@
 FROM --platform=$TARGETPLATFORM python:3.9-slim
 
+ARG VERSION=dev
 LABEL maintainer="abai569"
 LABEL org.opencontainers.image.source="https://github.com/abai569/new-cloudpanel"
 LABEL org.opencontainers.image.description="CloudPanel - 多云服务管理平台"
+LABEL org.opencontainers.image.version="${VERSION}"
 
 # 设置环境变量以减少Python生成的.pyc文件
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -34,10 +36,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 复制项目文件
 COPY . .
 
-# 提取版本号
-RUN VERSION=$(head -1 VERSION) && \
-    echo "VERSION=${VERSION}" > .version && \
-    echo "${VERSION}" > /etc/cloudpanel-version
+# 写入版本号
+RUN echo "${VERSION}" > /etc/cloudpanel-version
 
 # 创建必要的目录并设置配置文件
 RUN mkdir -p /etc/supervisor/conf.d \
