@@ -15,8 +15,9 @@ load_dotenv()
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'panelProject.settings')
 os.environ.setdefault('FORKED_BY_MULTIPROCESSING', '1')
-REDIS=os.getenv("REDIS")
-app = Celery("app", backend='redis', broker=f'redis://{REDIS}/1')
+REDIS = os.getenv("REDIS") or f"{os.getenv('REDIS_HOST', 'redis')}:{os.getenv('REDIS_PORT', '6379')}"
+REDIS_URL = REDIS if REDIS.startswith('redis://') else f'redis://{REDIS}/1'
+app = Celery("app", backend=REDIS_URL, broker=REDIS_URL)
 
 # app.now=datetime.datetime.utcnow
 # print app.now(), 'celery---------------->>>>>>'
@@ -61,39 +62,39 @@ app.conf.beat_schedule = {
     'checkAwsEc2Status': {
         'task': 'apps.aws.tasks.beat_check_ec2',
         'schedule': crontab(minute='*'),
-        'args': ''
+        'args': ()
     },
     # 每小时检测一次账号配额
     'beat_update_value': {
         'task': 'apps.aws.tasks.beat_update_value',
         'schedule': crontab(minute='00', hour='*'),
-        'args': ''
+        'args': ()
     },
     # 每天定时更新一次全部账号
     'update_all_account': {
         'task': 'apps.aws.tasks.update_all_account',
         'schedule': crontab(minute='11', hour='00'),
-        'args': ''
+        'args': ()
     },
     # 每天定时更新一次azure全部账号
     'beat_update_azure_account': {
         'task': 'apps.azure.tasks.beat_update_azure_account',
         'schedule': crontab(minute='30', hour='*/4'),
-        'args': ''
+        'args': ()
     },
 
     # 每4小时更新一次linode账号 beat_update_linode_account
     'beat_update_linode_account': {
         'task': 'apps.linode.tasks.beat_update_linode_account',
         'schedule': crontab(minute='40', hour='*/4'),
-        'args': ''
+        'args': ()
     },
 
     # 每4小时更新一次do账号 beat_update_linode_account
     'beat_update_do_account': {
         'task': 'apps.do.tasks.beat_update_do_account',
         'schedule': crontab(minute='50', hour='*/4'),
-        'args': ''
+        'args': ()
     },
 }
 #beat_update_azure_account

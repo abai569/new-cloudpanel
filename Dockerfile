@@ -38,6 +38,7 @@ RUN echo "${VERSION}" > /etc/cloudpanel-version
 
 # 创建必要的目录并设置配置文件
 RUN mkdir -p /etc/supervisor/conf.d \
+    && mkdir -p data \
     && mkdir -p logs \
     && cp ./config/celery-beat.conf /etc/supervisor/conf.d/ \
     && cp ./config/celery-worker.conf /etc/supervisor/conf.d/ \

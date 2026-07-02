@@ -10,3 +10,5 @@ python-dotenv==1.0.1
 azure-mgmt-compute==30.6.0
 azure-mgmt-network==25.3.0
 azure-mgmt-resource==23.1.1
+azure-mgmt-subscription==3.1.1
+azure-identity==1.16.1

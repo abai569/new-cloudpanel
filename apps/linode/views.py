@@ -197,14 +197,14 @@ class LinodeVmActionView(View):
                 'message': '操作失败'
             })
 
-        if action in 'delete':
+        if action == 'delete':
             status = vm_info.delete_linode()
             return JsonResponse({
                 'code': 20000 if status else 20001,
                 'message': '实例删除成功' if status else '实例删除失败'
             })
 
-        if action in 'update':
+        if action == 'update':
             vm_info.account.update_instances()
             return JsonResponse({
                 'code': 20000,
@@ -212,14 +212,9 @@ class LinodeVmActionView(View):
             })
 
         if action in ['resetip']:
-            if vm_info.reset_ip():
-                return JsonResponse({
-                    'code': 20000,
-                    'message': f'更换IP操作已完成, 新IP需要几分钟才能显示。'
-                })
             return JsonResponse({
                 'code': 20001,
-                'message': '更换IP失败'
+                'message': 'Linode 暂不支持更换IP'
             })
 
 # 创建 Linode Vm 实例

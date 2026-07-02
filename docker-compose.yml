@@ -38,8 +38,10 @@ services:
     networks:
       - panel_network
     volumes:
-      - ./data/db.sqlite3:/home/python/panel/db.sqlite3
+      - ./data:/home/python/panel/data
       - ./logs:/home/python/panel/logs
+    environment:
+      SQLITE_PATH: /home/python/panel/data/db.sqlite3
     env_file:
       - .env
     healthcheck:

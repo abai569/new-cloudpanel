@@ -127,12 +127,12 @@ class LightsailGetRegionView(View):
         try:
             aApi = AwsApi(key_id=data_info.key_id, key_secret=data_info.secret)
             aApi.start('lightsail')
-                logger.debug(f"LightsailGetRegionView cache miss, fetching from API")
-                ret = cache.get(token, False)
-                if ret in [None, False]:
-                    ret = aApi.client.get_regions(includeAvailabilityZones=True)
-                    logger.debug(f"LightsailGetRegionView: fetched regions, count={len(ret.get('regions', []))}")
-                    cache.set(token, ret, 60 * 60 * 24)
+            logger.debug("LightsailGetRegionView cache miss, fetching from API")
+            ret = cache.get(token, False)
+            if ret in [None, False]:
+                ret = aApi.client.get_regions(includeAvailabilityZones=True)
+                logger.debug(f"LightsailGetRegionView: fetched regions, count={len(ret.get('regions', []))}")
+                cache.set(token, ret, 60 * 60 * 24)
             for region in ret['regions']:
                 _data = {
                     'region': region['name'],
@@ -675,7 +675,7 @@ class AwsAccountView(View):
 
                 # 检测异常账号数量
                 error_count = models.Account.objects.filter(users_id=request.user.id, value=0, status=False).count()
-                if error_count >=3 and not request.user.is_admin:
+                if error_count >=3 and not request.user.is_superuser:
                     return JsonResponse({'code': 20001, 'message': f'添加失败, 防止资源浪费, 请及时删除异常账户, 当前异常账户 {error_count} 个'})
 
                 # 测试账号是否正常

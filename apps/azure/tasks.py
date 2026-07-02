@@ -16,7 +16,6 @@ def task_update_az(account_id):
     account_info.update_vm_list()
 
     for _vm in Vm.objects.filter(account_id=account_info.id):
-        _vm.update_public_ip()
         _vm.update_vm_info()
     return '更新完成', True
 

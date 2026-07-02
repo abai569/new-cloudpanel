@@ -5,7 +5,11 @@ from apps.do.models import Account
 
 # 更新 do 账号信息
 @shared_task()
-def beat_update_do_account(account_id, account=True, droplet=True):
+def beat_update_do_account(account_id=None, account=True, droplet=True):
+    if account_id is None:
+        for account_info in Account.objects.all():
+            beat_update_do_account(account_info.id, account=account, droplet=droplet)
+        return True
 
     account_info = Account.objects.filter(id=account_id).first()
 

@@ -3,9 +3,13 @@
 VERSION=$(cat /etc/cloudpanel-version 2>/dev/null || echo "unknown")
 echo "CloudPanel v${VERSION} starting..."
 
+mkdir -p data logs
+
 # 等待 Redis 就绪
 echo "Waiting for Redis..."
-while ! nc -z redis 6379; do
+REDIS_HOST=${REDIS_HOST:-redis}
+REDIS_PORT=${REDIS_PORT:-6379}
+while ! nc -z "$REDIS_HOST" "$REDIS_PORT"; do
   sleep 1
 done
 echo "Redis is ready!"

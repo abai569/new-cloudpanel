@@ -97,7 +97,7 @@ class AzureAccountView(View):
 
             return JsonResponse({'code': 20001, 'message': '操作失败', 'error_data': inputData.errors})
         except BaseException as e:
-            return JsonResponse({'code': 20001, 'message': '添加账号失败', 'error_message': e})
+            return JsonResponse({'code': 20001, 'message': '添加账号失败', 'error_message': str(e)})
 
 
 # azure 账号操作
@@ -119,10 +119,10 @@ class AzureAccountAcitonView(View):
                 return JsonResponse({'code': 20001, 'message': '账号资源更新失败'})
             return JsonResponse({'code': 20000, 'message': '账号资源更新成功'})
 
-        return JsonResponse({{
+        return JsonResponse({
             'code': 20001,
             'message': '未知操作'
-        }})
+        })
 
 
 # 删除 Azure 账号
@@ -166,7 +166,7 @@ class AzureVmListView(View):
 
         if request.GET.get('username'):
             wd = request.GET.get('username', '').strip()
-            q.add(Q(account__username__icontains=wd), Q.AND)
+            q.add(Q(account__users__username__icontains=wd), Q.AND)
 
         _data_list = []
         data_list = models.Vm.objects.filter(q).order_by('-create_time', 'id')

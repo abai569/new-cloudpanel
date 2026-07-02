@@ -123,6 +123,7 @@ def update_all_account():
     return True
 
 # 每一小时更新一次所有账号的配额
+@shared_task()
 def beat_update_value():
     for foo in AwsAccount.objects.filter().exclude(value=0):
         foo.update_service_quota()

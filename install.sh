@@ -245,6 +245,9 @@ DJANGO_SETTINGS_MODULE=panelProject.settings
 REDIS_HOST=redis
 REDIS_PORT=6379
 
+# SQLite 数据库路径
+SQLITE_PATH=/home/python/panel/data/db.sqlite3
+
 # 时区设置
 TZ=Asia/Shanghai
 

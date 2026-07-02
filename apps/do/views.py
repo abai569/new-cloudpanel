@@ -132,7 +132,7 @@ class DoDropletsListView(View):
 
         if request.GET.get('username'):
             wd = request.GET.get('username', '').strip()
-            q.add(Q(account__username__icontains=wd), Q.AND)
+            q.add(Q(account__name__icontains=wd) | Q(account__email__icontains=wd), Q.AND)
 
         _data_list = []
         data_list = models.Droplets.objects.filter(q).order_by('-create_time', 'id')

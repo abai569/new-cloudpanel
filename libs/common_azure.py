@@ -5,7 +5,7 @@ from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.subscription import SubscriptionClient
-from azure.common.credentials import ServicePrincipalCredentials
+from azure.identity import ClientSecretCredential
 
 
 class AzureClass():
@@ -14,10 +14,10 @@ class AzureClass():
         self.client_id = client_id
         self.secret = secret
         self.subscription_id = None
-        self.credential = ServicePrincipalCredentials(
+        self.credential = ClientSecretCredential(
+            tenant_id=self.tenant_id,
             client_id=self.client_id,
-            secret=self.secret,
-            tenant=self.tenant_id
+            client_secret=self.secret,
         )
 
     # 获取订阅列表
