@@ -64,7 +64,7 @@ docker pull ghcr.io/abai569/new-cloudpanel:latest
 
 ### 管理后台
 
-管理员可以通过以下地址访问管理后台：`http://your-server-ip:8111/api/admin`
+管理员可以通过以下地址访问管理后台：`http://your-server-ip:889/api/admin`
 
 管理后台功能包括：
 - 用户管理：创建、编辑、删除用户
