@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate, login , logout
 import datetime, time
 from django.views import View
 from django.contrib.auth.models import User
+from django.views.decorators.csrf import csrf_exempt
 
 
 from django.views import View
@@ -38,6 +39,7 @@ def Dashboard(request):
     return JsonResponse({'code': 20000, 'message': '获取成功', 'data': data })
 
 # 登录
+@csrf_exempt
 def Login(request):
     if request.method == "POST":
         input_data = forms.Login(request.POST)
