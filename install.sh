@@ -227,6 +227,10 @@ do_install() {
         exit 1
     }
 
+    # 获取当前版本号
+    CLOUDPANEL_VERSION=$(curl -fsSL "${BASE_URL}/VERSION" 2>/dev/null || echo "latest")
+    log_info "当前版本: v${CLOUDPANEL_VERSION}"
+
     log_step "生成 .env 配置文件..."
     local SECRET_KEY=$(openssl rand -base64 48 2>/dev/null || python3 -c "import secrets; print(secrets.token_urlsafe(50))")
 
@@ -248,6 +252,9 @@ TZ=Asia/Shanghai
 DJANGO_SECRET_KEY=${SECRET_KEY}
 ALLOWED_HOSTS=*
 CORS_ALLOWED_ORIGINS=http://localhost:8086,http://127.0.0.1:8086
+
+# 镜像版本
+IMAGE_TAG=${CLOUDPANEL_VERSION}
 
 # 端口设置
 FRONTENDPORT=8086
@@ -327,7 +334,7 @@ show_success() {
     local SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || echo "<YourServerIP>")
     echo ""
     echo -e "${GREEN}======================================${NC}"
-    echo -e "${GREEN}  CloudPanel 安装完成!${NC}"
+    echo -e "${GREEN}  CloudPanel v${CLOUDPANEL_VERSION} 安装完成!${NC}"
     echo -e "${GREEN}======================================${NC}"
     echo -e "  访问地址: ${BLUE}http://${SERVER_IP}:8086${NC}"
     echo -e "  管理后台: ${BLUE}http://${SERVER_IP}:8111/api/admin${NC}"

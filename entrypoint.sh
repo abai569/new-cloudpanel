@@ -1,5 +1,8 @@
 #!/bin/bash
 
+VERSION=$(cat /etc/cloudpanel-version 2>/dev/null || echo "unknown")
+echo "CloudPanel v${VERSION} starting..."
+
 # 等待 Redis 就绪
 echo "Waiting for Redis..."
 while ! nc -z redis 6379; do

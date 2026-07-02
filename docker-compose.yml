@@ -29,7 +29,7 @@ services:
         - panel_network
 
   api:
-    image: ghcr.io/abai569/new-cloudpanel:latest
+    image: ghcr.io/abai569/new-cloudpanel:${IMAGE_TAG:-latest}
     platform: linux/amd64
     container_name: cloudpanel-api
     restart: always

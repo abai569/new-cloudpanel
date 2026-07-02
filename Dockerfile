@@ -34,6 +34,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 复制项目文件
 COPY . .
 
+# 提取版本号
+RUN VERSION=$(head -1 VERSION) && \
+    echo "VERSION=${VERSION}" > .version && \
+    echo "${VERSION}" > /etc/cloudpanel-version
+
 # 创建必要的目录并设置配置文件
 RUN mkdir -p /etc/supervisor/conf.d \
     && mkdir -p logs \
