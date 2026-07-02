@@ -188,7 +188,7 @@
                     e._v(" "),
                     o("div", { staticStyle: { "font-size": "13px" } }, [
                       o("span", { staticStyle: { color: "#ffffff" } }, [
-                        e._v("本程序免费提供, 请不要相信付费, 讨论组 @floxpanel "),
+                        e._v(""),
                         o(
                           "a",
                           {
