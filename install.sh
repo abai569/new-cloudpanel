@@ -294,7 +294,7 @@ wait_for_container() {
     log_info "正在等待服务启动（最多等待 120 秒）..."
     local count=0
     while [ $count -lt 120 ]; do
-        if curl -sf http://localhost:8111/health/ &>/dev/null; then
+        if curl -sf http://localhost:8000/health/ &>/dev/null; then
             break
         fi
         sleep 1
