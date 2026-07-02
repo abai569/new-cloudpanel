@@ -59,11 +59,8 @@ h2{font-size:20px;margin-bottom:24px;text-align:center;color:#1890ff}
 </div>
 <script>
 var token = (function(){
-  var user = localStorage.getItem('user');
-  if (user) {
-    try { var d = JSON.parse(user); if (d.token) return d.token } catch(e) {}
-  }
-  return ''
+  var m = document.cookie.match(/(^|;\s*)Admin-Token=([^;]*)/);
+  return m ? decodeURIComponent(m[2]) : '';
 })();
 
 function req(method, url, data) {
@@ -114,7 +111,7 @@ function changePassword() {
   }).then(function(res) {
     if (res.code === 20000) {
       showMsg(res.message || '修改成功', 'success');
-      localStorage.removeItem('user');
+      document.cookie = 'Admin-Token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
       setTimeout(function(){ window.location.href='/' }, 1500);
     } else {
       showMsg(res.message || '修改失败', 'error');
