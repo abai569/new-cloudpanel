@@ -121,17 +121,21 @@ do_uninstall() {
         exit 0
     fi
 
-    log_step "正在停止和清理容器..."
+    log_step "正在停止和清理 compose 容器..."
     if [ -d "$INSTALL_DIR" ]; then
         cd "$INSTALL_DIR"
         docker compose down -v
     fi
+
+    log_step "正在清理残留容器..."
+    docker rm -f cloudpanel-api cloudpanel-web cloudpanel-web2 cloudpanel-web3 panel_redis panel_mysql cloudpanel-nginx 2>/dev/null || true
 
     log_step "正在删除安装目录..."
     rm -rf "$INSTALL_DIR"
     
     # 清理 Docker 镜像
     log_info "清理 Docker 镜像..."
+    docker rmi ghcr.io/abai569/new-cloudpanel:latest 2>/dev/null || true
     docker image prune -f
 
     echo ""
