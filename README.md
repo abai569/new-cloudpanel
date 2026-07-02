@@ -4,34 +4,6 @@
 
 CloudPanel 是一个强大的多云服务管理平台，支持管理和监控多个主流云服务提供商的资源。通过统一的界面，轻松管理 AWS、Azure、DigitalOcean 和 Linode 等云服务资源。
 
-### GitHub Container Registry
-
-镜像推送到 GitHub Container Registry (ghcr.io)，Docker 会自动检测架构并拉取对应镜像。
-
-```bash
-docker pull ghcr.io/nodewebzsz/cloudpanel:latest
-```
-
-## 功能特点
-
-- 多云服务提供商支持（AWS、Azure、DigitalOcean、Linode）
-- 统一的资源管理界面
-- 用户权限管理系统
-- 容器化部署支持
-- 异步任务处理
-- RESTful API 接口
-
-## 系统要求
-
-- Docker 19.03+ (支持多架构构建)
-- Docker Compose
-
-## 前端页面展示
-![页面截图](./image.png)
-![页面截图](./screen.png)
-
-
-
 ## 快速开始
 
 ### 一键安装（推荐）
@@ -45,10 +17,15 @@ curl -fsSL https://raw.githubusercontent.com/Nodewebzsz/cloudpanel/refs/heads/ma
 # 或下载后运行
 chmod +x install.sh && ./install.sh
 ```
+```bash
+# 或下载后运行
+wget -O /opt/cloudpanel https://raw.githubusercontent.com/Nodewebzsz/cloudpanel/refs/heads/main/install.sh | bash
+chmod +x install.sh && ./install.sh
+```
 
 **自定义参数：**
 ```bash
-./install.sh -d /my/cloudpanel -f 8080 -b 9090
+./install.sh -d /opt/cloudpanel -f 8080 -b 9090
 ```
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
@@ -134,6 +111,31 @@ python manage.py createsuperuser --username admin --email admin@admin.com
 ```bash
 python manage.py aws_update_images
 ```
+### GitHub Container Registry
+
+镜像推送到 GitHub Container Registry (ghcr.io)，Docker 会自动检测架构并拉取对应镜像。
+
+```bash
+docker pull ghcr.io/nodewebzsz/cloudpanel:latest
+```
+
+## 功能特点
+
+- 多云服务提供商支持（AWS、Azure、DigitalOcean、Linode）
+- 统一的资源管理界面
+- 用户权限管理系统
+- 容器化部署支持
+- 异步任务处理
+- RESTful API 接口
+
+## 系统要求
+
+- Docker 19.03+ (支持多架构构建)
+- Docker Compose
+
+## 前端页面展示
+![页面截图](./image.png)
+![页面截图](./screen.png)
 
 
 ## 访问前端平台
