@@ -55,7 +55,7 @@ docker pull ghcr.io/abai569/new-cloudpanel:latest
 - Docker Compose
 
 ## 前端页面展示
-![页面截图](./web/img/image.jpg)
+![页面截图](./web/static/img/image.jpg)
 
 
 ## 访问前端平台
