@@ -1,219 +1,218 @@
 from django.core.management.base import BaseCommand
-from apps.aws.models import Ec2Images
+from apps.aws.models import Ec2Images, Account
+from libs.aws import AwsApi
+
+
+IMAGE_QUERIES = [
+    ('Amazon Linux 2023', 'amazon', 'al2023-ami-2023*'),
+    ('Amazon Linux 2', 'amazon', 'amzn2-ami-hvm-2.0.*'),
+    ('Ubuntu 24.04 LTS', '099720109477', 'ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*'),
+    ('Ubuntu 22.04 LTS', '099720109477', 'ubuntu/images/hvm-ssd-gp3/ubuntu-jammy-22.04-amd64-server-*'),
+    ('Ubuntu 20.04 LTS', '099720109477', 'ubuntu/images/hvm-ssd-gp3/ubuntu-focal-20.04-amd64-server-*'),
+    ('Debian 12', '136693071363', 'debian-12-*'),
+    ('Debian 11', '136693071363', 'debian-11-*'),
+    ('Rocky Linux 9', '679593333241', 'Rocky-9-EC2-*'),
+    ('Rocky Linux 8', '679593333241', 'Rocky-8-EC2-*'),
+    ('Red Hat Enterprise Linux 9', '309956199498', 'RHEL-9.*_HVM-*-x86_64-*'),
+]
+
+STATIC_IMAGES = [
+    ('Amazon Linux 2', 'ami-0c1c30571d2dae5c9', 'ap-northeast-1'),
+    ('Amazon Linux 2023', 'ami-01f544628f8b5f1d1', 'ap-northeast-1'),
+    ('Ubuntu 24.04 LTS', 'ami-0d6b1913edac0f379', 'ap-northeast-1'),
+    ('Ubuntu 22.04 LTS', 'ami-07c7e04902bf289d3', 'ap-northeast-1'),
+    ('Ubuntu 20.04 LTS', 'ami-0d36ae0292c99c8ec', 'ap-northeast-1'),
+    ('Debian 12', 'ami-005f60e1d45e94295', 'ap-northeast-1'),
+    ('Debian 11', 'ami-082aea917abdf1460', 'ap-northeast-1'),
+    ('Rocky Linux 9', 'ami-0a18fa0284bcaaae1', 'ap-northeast-1'),
+    ('Amazon Linux 2', 'ami-05fb66375013a6ab6', 'ap-southeast-1'),
+    ('Amazon Linux 2023', 'ami-05ec27c5e2f6186f4', 'ap-southeast-1'),
+    ('Ubuntu 24.04 LTS', 'ami-0a1e932e32433eab3', 'ap-southeast-1'),
+    ('Ubuntu 22.04 LTS', 'ami-04731386031bf42a0', 'ap-southeast-1'),
+    ('Ubuntu 20.04 LTS', 'ami-03193de4b8eaf4e6a', 'ap-southeast-1'),
+    ('Debian 12', 'ami-04e3fbacff3c69d76', 'ap-southeast-1'),
+    ('Debian 11', 'ami-06cd01c5179e80b63', 'ap-southeast-1'),
+    ('Rocky Linux 9', 'ami-0dc2395429ee8e1ed', 'ap-southeast-1'),
+    ('Amazon Linux 2', 'ami-0fe630eb857a6ec83', 'us-east-1'),
+    ('Amazon Linux 2023', 'ami-01816d07b1128cd2e', 'us-east-1'),
+    ('Ubuntu 24.04 LTS', 'ami-04b70fa74eebaf0b8', 'us-east-1'),
+    ('Ubuntu 22.04 LTS', 'ami-080e12f04d64e9d60', 'us-east-1'),
+    ('Ubuntu 20.04 LTS', 'ami-0b69ea66ff7391e80', 'us-east-1'),
+    ('Debian 12', 'ami-0eab7f7272015e6f3', 'us-east-1'),
+    ('Debian 11', 'ami-0c6599df7db49d2c7', 'us-east-1'),
+    ('Rocky Linux 9', 'ami-0f97cb9e4a48e3694', 'us-east-1'),
+    ('Amazon Linux 2', 'ami-0cd3dfa4e37921605', 'eu-west-1'),
+    ('Amazon Linux 2023', 'ami-04f35c4052ff3526d', 'eu-west-1'),
+    ('Ubuntu 24.04 LTS', 'ami-04242e7eaf3ae699e', 'eu-west-1'),
+    ('Ubuntu 22.04 LTS', 'ami-0c3996e77be06549b', 'eu-west-1'),
+    ('Ubuntu 20.04 LTS', 'ami-0942d4e7c39f9b16d', 'eu-west-1'),
+    ('Debian 12', 'ami-07976520a94fa5a81', 'eu-west-1'),
+    ('Debian 11', 'ami-0a0b8cf6e5115744a', 'eu-west-1'),
+    ('Rocky Linux 9', 'ami-0f73b7ebb37e06d75', 'eu-west-1'),
+    ('Amazon Linux 2', 'ami-0eb14fe7b72ac2a56', 'us-west-2'),
+    ('Amazon Linux 2023', 'ami-01f77a72f1b32af4e', 'us-west-2'),
+    ('Ubuntu 24.04 LTS', 'ami-04b8631283aa63524', 'us-west-2'),
+    ('Ubuntu 22.04 LTS', 'ami-01650547f28e84c8c', 'us-west-2'),
+    ('Ubuntu 20.04 LTS', 'ami-0bc5450510e49b4b0', 'us-west-2'),
+    ('Debian 12', 'ami-0ea3b65ee55bcfd28', 'us-west-2'),
+    ('Debian 11', 'ami-0c0f7b0cb8e7d75e8', 'us-west-2'),
+    ('Rocky Linux 9', 'ami-0187f9f491e9e9fe1', 'us-west-2'),
+    ('Amazon Linux 2', 'ami-03cd80b4981c6eb15', 'ap-south-1'),
+    ('Amazon Linux 2023', 'ami-03f2a1e336b42edd8', 'ap-south-1'),
+    ('Ubuntu 24.04 LTS', 'ami-053eec3a534325f3d', 'ap-south-1'),
+    ('Ubuntu 22.04 LTS', 'ami-0a03b38c94424cf83', 'ap-south-1'),
+    ('Ubuntu 20.04 LTS', 'ami-098743f6f4b335b51', 'ap-south-1'),
+    ('Debian 12', 'ami-0a3cd20ddbd5b169b', 'ap-south-1'),
+    ('Debian 11', 'ami-08a7c4f9eb6edfa6d', 'ap-south-1'),
+    ('Rocky Linux 9', 'ami-0261c1de32b5f7aff', 'ap-south-1'),
+    ('Amazon Linux 2', 'ami-0d55f0772e90ab36e', 'ap-northeast-2'),
+    ('Amazon Linux 2023', 'ami-0079aecc83d0e1c29', 'ap-northeast-2'),
+    ('Ubuntu 24.04 LTS', 'ami-03e6633f4e9382fcc', 'ap-northeast-2'),
+    ('Ubuntu 22.04 LTS', 'ami-08b775db022a55aca', 'ap-northeast-2'),
+    ('Ubuntu 20.04 LTS', 'ami-05885a3374dfee26b', 'ap-northeast-2'),
+    ('Debian 12', 'ami-0680e867fd8d6a449', 'ap-northeast-2'),
+    ('Debian 11', 'ami-0cac8af1bc6336618', 'ap-northeast-2'),
+    ('Rocky Linux 9', 'ami-01e1ae880be56a2e0', 'ap-northeast-2'),
+    ('Amazon Linux 2', 'ami-0957e1b70bf9116ce', 'eu-central-1'),
+    ('Amazon Linux 2023', 'ami-0282858abeeafdff8', 'eu-central-1'),
+    ('Ubuntu 24.04 LTS', 'ami-0fcf56edd656cdda3', 'eu-central-1'),
+    ('Ubuntu 22.04 LTS', 'ami-076c69035370ad2e1', 'eu-central-1'),
+    ('Ubuntu 20.04 LTS', 'ami-03b5e4f04d780bdb3', 'eu-central-1'),
+    ('Debian 12', 'ami-01c42582923d63551', 'eu-central-1'),
+    ('Debian 11', 'ami-0ca0de2a988ab7d80', 'eu-central-1'),
+    ('Rocky Linux 9', 'ami-0a922e0d8dbab93bc', 'eu-central-1'),
+    ('Amazon Linux 2', 'ami-084afaa49e4ff1b7b', 'ap-southeast-2'),
+    ('Amazon Linux 2023', 'ami-0f311415d39e20467', 'ap-southeast-2'),
+    ('Ubuntu 24.04 LTS', 'ami-03020643ea6faae3e', 'ap-southeast-2'),
+    ('Ubuntu 22.04 LTS', 'ami-0d135c42158e6e9c7', 'ap-southeast-2'),
+    ('Ubuntu 20.04 LTS', 'ami-052be412adc9fb4a6', 'ap-southeast-2'),
+    ('Debian 12', 'ami-0c5af48af4106dfad', 'ap-southeast-2'),
+    ('Debian 11', 'ami-07117f48f0ceb9f8f', 'ap-southeast-2'),
+    ('Rocky Linux 9', 'ami-03354734aeff7baba', 'ap-southeast-2'),
+    ('Amazon Linux 2', 'ami-0891f5df7bca2761b', 'ca-central-1'),
+    ('Amazon Linux 2023', 'ami-014d4a3cbfae9e7d4', 'ca-central-1'),
+    ('Ubuntu 24.04 LTS', 'ami-02f0e33aa51d47a59', 'ca-central-1'),
+    ('Ubuntu 22.04 LTS', 'ami-0e6d2f03cce77ecd1', 'ca-central-1'),
+    ('Ubuntu 20.04 LTS', 'ami-0a4c7a97bb1824436', 'ca-central-1'),
+    ('Debian 12', 'ami-073fbf9dcd2332f5a', 'ca-central-1'),
+    ('Debian 11', 'ami-0d66a7a2a08be6902', 'ca-central-1'),
+    ('Rocky Linux 9', 'ami-050cd5b067cc33a0f', 'ca-central-1'),
+    ('Amazon Linux 2', 'ami-04e8c5e9e62dccbc9', 'eu-west-2'),
+    ('Amazon Linux 2023', 'ami-064ae1ac9aa0bdf83', 'eu-west-2'),
+    ('Ubuntu 24.04 LTS', 'ami-07fbfb7aec92c75f8', 'eu-west-2'),
+    ('Ubuntu 22.04 LTS', 'ami-0b1d0158c3b138b4b', 'eu-west-2'),
+    ('Ubuntu 20.04 LTS', 'ami-0d0812f9c03a90ea2', 'eu-west-2'),
+    ('Debian 12', 'ami-0ade26c4989f98e84', 'eu-west-2'),
+    ('Debian 11', 'ami-0ec587a3a569ce14a', 'eu-west-2'),
+    ('Rocky Linux 9', 'ami-043e0b60a829d7ff1', 'eu-west-2'),
+    ('Amazon Linux 2', 'ami-0556309845d90f931', 'eu-west-3'),
+    ('Amazon Linux 2023', 'ami-0cb04d9bef9f9cf4a', 'eu-west-3'),
+    ('Ubuntu 24.04 LTS', 'ami-083308531fd97f2d7', 'eu-west-3'),
+    ('Ubuntu 22.04 LTS', 'ami-0195f3089aedde232', 'eu-west-3'),
+    ('Ubuntu 20.04 LTS', 'ami-04f0a1bf8e35e8f96', 'eu-west-3'),
+    ('Debian 12', 'ami-04318c3475ffa37be', 'eu-west-3'),
+    ('Debian 11', 'ami-0c1e04d0d36e58c7f', 'eu-west-3'),
+    ('Rocky Linux 9', 'ami-0a0a90a6c94df4357', 'eu-west-3'),
+    ('Amazon Linux 2', 'ami-008c90f3335ecc9a1', 'sa-east-1'),
+    ('Amazon Linux 2023', 'ami-0f64099af31316b7a', 'sa-east-1'),
+    ('Ubuntu 24.04 LTS', 'ami-0c9c626388ab4894f', 'sa-east-1'),
+    ('Ubuntu 22.04 LTS', 'ami-0bfb6e51bcdcc4fb7', 'sa-east-1'),
+    ('Ubuntu 20.04 LTS', 'ami-074331f0aeed0e4f8', 'sa-east-1'),
+    ('Debian 12', 'ami-0040f17bbf65e35e4', 'sa-east-1'),
+    ('Debian 11', 'ami-076e22eebc501b87b', 'sa-east-1'),
+    ('Rocky Linux 9', 'ami-06ac85e7cd7ba9b67', 'sa-east-1'),
+    ('Amazon Linux 2', 'ami-04ae7c11677ff4de5', 'us-east-2'),
+    ('Amazon Linux 2023', 'ami-03e79b7b45c17a943', 'us-east-2'),
+    ('Ubuntu 24.04 LTS', 'ami-0e192a51ce204c467', 'us-east-2'),
+    ('Ubuntu 22.04 LTS', 'ami-089fa6f64a3bb7746', 'us-east-2'),
+    ('Ubuntu 20.04 LTS', 'ami-0a89e25a7615e4b58', 'us-east-2'),
+    ('Debian 12', 'ami-091f6c46b193ac3ce', 'us-east-2'),
+    ('Debian 11', 'ami-07757d45f3351e0e7', 'us-east-2'),
+    ('Rocky Linux 9', 'ami-0663f9cffef568fb8', 'us-east-2'),
+    ('Amazon Linux 2', 'ami-0888c1e0f72e712cd', 'us-west-1'),
+    ('Amazon Linux 2023', 'ami-02579b7a11e2d06bc', 'us-west-1'),
+    ('Ubuntu 24.04 LTS', 'ami-04dbd64773aa8ce89', 'us-west-1'),
+    ('Ubuntu 22.04 LTS', 'ami-0ae1006c3b667af1e', 'us-west-1'),
+    ('Ubuntu 20.04 LTS', 'ami-07f2c45f97dfb0faf', 'us-west-1'),
+    ('Debian 12', 'ami-0d8af4b4cee939f3c', 'us-west-1'),
+    ('Debian 11', 'ami-04b7b972d433282c8', 'us-west-1'),
+    ('Rocky Linux 9', 'ami-0844a2a176e9c6a56', 'us-west-1'),
+]
 
 
 class Command(BaseCommand):
-    help = '添加aws镜像'
+    help = 'Import EC2 AMI images from AWS dynamically, with static fallback'
 
-    def handle(self, *args, **options):
-
-        self.update_debian()
-        self.update_centos()
-        self.update_ubuntu()
-
-    def save_image(self, name, ami, region):
-        Ec2Images.objects.update_or_create(
-            ami=ami,
-            defaults={
-                'name': name,
-                'region': region,
-            },
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--clear',
+            action='store_true',
+            help='Clear all existing images before importing',
         )
 
-    def update_ubuntu(self):
-        ubuntu = """af-south-1	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0dbb0a9b02af77021	hvm
-        ap-east-1	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-07498dac6f228478b	hvm
-        ap-northeast-1	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-093c296276d61b583	hvm
-        ap-south-1	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0714e655390b1d125	hvm
-        ap-southeast-1	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-010e14b2b7ac1b58f	hvm
-        ca-central-1	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-05d4e8b594aef7897	hvm
-        eu-central-1	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0ce70c4057dc39200	hvm
-        eu-north-1	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-01b771eab1ba80698	hvm
-        eu-south-1	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0c46eb7c79452c092	hvm
-        eu-west-1	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0d94cb8577ea0e2fd	hvm
-        me-south-1	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-033fde578442476f0	hvm
-        sa-east-1	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0dec7a53c83222c6f	hvm
-        us-east-1	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-09943f9da1f1b7899	hvm
-        us-west-1	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-017329b75bfa6772b	hvm
-        ap-northeast-2	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0632cfe5256e6b811	hvm
-        ap-southeast-2	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-04fad20d313cc0947	hvm
-        eu-west-2	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-009725fa4dfe4acb0	hvm
-        us-east-2	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0bcacfac640850227	hvm
-        us-west-2	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-076cbb27c223df09a	hvm
-        ap-northeast-3	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0e4b432b8a51684ef	hvm
-        eu-west-3	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-06e3b9e580dd2d388	hvm
-        af-south-1	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-0c74a2e303be5a416	hvm
-        ap-east-1	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-08a012665688e0870	hvm
-        ap-northeast-1	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-0ab632fc36b987883	hvm
-        ap-south-1	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-02d8619fc5511c34e	hvm
-        ap-southeast-1	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-003f52c4a47b5da6b	hvm
-        ca-central-1	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-0a150433c41a574e0	hvm
-        eu-central-1	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-08abe5e3eba040201	hvm
-        eu-north-1	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-043e9b9258b37163d	hvm
-        eu-south-1	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-0cd44dc59912e1f25	hvm
-        eu-west-1	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-03f10415e8b0bfb86	hvm
-        me-south-1	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-083b5b36ff68b8e89	hvm
-        sa-east-1	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-0ba5b33aa57289efd	hvm
-        us-east-1	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-0b4eac045bf0ceb49	hvm
-        us-west-1	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-0251b2fbfa840f9c7	hvm
-        ap-northeast-2	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-0c81de7d11a95e229	hvm
-        ap-southeast-2	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-097de812525f83fa9	hvm
-        eu-west-2	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-01cbbf2ca9393b9c1	hvm
-        us-east-2	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-01e2903d4911669d1	hvm
-        us-west-2	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-09ec7a172423f418a	hvm
-        ap-northeast-3	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-05364f130ab566199	hvm
-        eu-west-3	groovy	20.10	amd64	hvm:ebs-ssd	20210224	ami-01e965db3734cd3a8	hvm
-        af-south-1	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0e4b4778694305983	hvm
-        ap-east-1	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-036915aa0cb1d91a1	hvm
-        ap-northeast-1	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0ef85cf6e604e5650	hvm
-        ap-south-1	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0b84c6433cdbe5c3e	hvm
-        ap-southeast-1	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-05b891753d41ff88f	hvm
-        ca-central-1	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-004c8bf91d878b99c	hvm
-        eu-central-1	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0e0102e3ff768559b	hvm
-        eu-north-1	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0f269726c071d0e96	hvm
-        eu-south-1	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0f274cb646afd3475	hvm
-        eu-west-1	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-06fd78dc2f0b69910	hvm
-        me-south-1	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-026dde872642a6ffe	hvm
-        sa-east-1	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0bd91caaa9bc42cf3	hvm
-        us-east-1	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-013f17f36f8b1fefb	hvm
-        us-west-1	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0121ef35996ede438	hvm
-        ap-northeast-2	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0078a04747667d409	hvm
-        ap-southeast-2	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-076a5bf4a712000ed	hvm
-        eu-west-2	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0244a5621d426859b	hvm
-        us-east-2	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-01e7ca2ef94a0ae86	hvm
-        us-west-2	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-02701bcdc5509e57b	hvm
-        ap-northeast-3	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0e958e6a9363c29ad	hvm
-        eu-west-3	bionic	18.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0a0d71ff90f62f72a	hvm"""
-        for i in ubuntu.strip().split('\n'):
+    def handle(self, *args, **options):
+        if options.get('clear'):
+            count = Ec2Images.objects.all().delete()[0]
+            self.stdout.write(self.style.WARNING(f'Cleared {count} existing images.'))
 
-            _i = i.split()
-            # print(_i)
-            region = _i[0]
-            if _i[3] != 'LTS':
+        account = Account.objects.filter(status=True).first()
+        if account:
+            self._update_dynamic(account.key_id, account.secret)
+        else:
+            self.stdout.write(self.style.WARNING('No active AWS account found, using static AMI list.'))
+            self._update_static()
 
-                name = f"Ubuntu {_i[2]}"
-                ami = _i[-2]
-            else:
-                name = f"Ubuntu {_i[2]} {_i[3]}"
-                ami = _i[-2]
+    def _update_dynamic(self, key_id, key_secret):
+        self.stdout.write('Fetching AMI images from AWS dynamically...')
 
-            _data = {
-                'name': name,
-                'ami': ami,
-                'region': region
-            }
-            self.save_image(**_data)
+        aApi = AwsApi(key_id, key_secret)
+        aApi.region = 'us-east-1'
+        aApi.start('ec2')
 
+        try:
+            regions_resp = aApi.client.describe_regions()
+            regions = [r['RegionName'] for r in regions_resp['Regions']]
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'Failed to get regions: {e}. Falling back to static list.'))
+            self._update_static()
+            return
 
-    def update_centos(self):
-        centos = """CentOS Linux 7	us-east-2	ami-00f8e2c955f7ffa9b
-CentOS Linux 7	us-east-1	ami-00e87074e52e6c9f9
-CentOS Linux 7	us-west-1	ami-08d2d8b00f270d03b
-CentOS Linux 7	us-west-2	ami-0686851c4e7b1a8e1
-CentOS Linux 7	af-south-1	ami-0b761332115c38669
-CentOS Linux 7	ap-east-1	ami-09611bd6fa5dd0e3d
-CentOS Linux 7	ap-south-1	ami-0ffc7af9c06de0077
-CentOS Linux 7	ap-northeast-1	ami-0ddea5e0f69c193a4
-CentOS Linux 7	ap-northeast-2	ami-0e4214f08b51e23cc
-CentOS Linux 7	ap-southeast-1	ami-0adfdaea54d40922b
-CentOS Linux 7	ap-southeast-2	ami-03d56f451ca110e99
-CentOS Linux 7	ca-central-1	ami-0a7c5b189b6460115
-CentOS Linux 7	eu-central-1	ami-08b6d44b4f6f7b279
-CentOS Linux 7	eu-west-1	ami-04f5641b0d178a27a
-CentOS Linux 7	eu-west-2	ami-0b22fcaf3564fb0c9
-CentOS Linux 7	eu-west-3	ami-072ec828dae86abe5
-CentOS Linux 7	eu-south-1	ami-0fe3899b62205176a
-CentOS Linux 7	eu-north-1	ami-0358414bac2039369
-CentOS Linux 7	me-south-1	ami-0ac17dcdd6f6f4eb6
-CentOS Linux 7	sa-east-1	ami-02334c45dd95ca1fc
-CentOS Linux 8	us-east-2	ami-0ac6967966621d983
-CentOS Linux 8	us-east-1	ami-056b03dba13a2c9dd
-CentOS Linux 8	us-west-1	ami-04adf3fcbc8a45c54
-CentOS Linux 8	us-west-2	ami-0155c31ea13d4abd2
-CentOS Linux 8	af-south-1	ami-0bf6cf59605331551
-CentOS Linux 8	ap-east-1	ami-0ad3314ea64676ee5
-CentOS Linux 8	ap-south-1	ami-0e99c55244ca9e406
-CentOS Linux 8	ap-northeast-1	ami-0d9bf167cb68ac889
-CentOS Linux 8	ap-northeast-2	ami-06c6d129b47acaba9
-CentOS Linux 8	ap-southeast-1	ami-05930ce55ebfd2930
-CentOS Linux 8	ap-southeast-2	ami-0e8d52e2390c082c3
-CentOS Linux 8	ca-central-1	ami-0557e54bb3a24f10e
-CentOS Linux 8	eu-central-1	ami-0e337c7f9752d9d34
-CentOS Linux 8	eu-west-1	ami-0a75a5a43b05b4d5f
-CentOS Linux 8	eu-west-2	ami-00c89583fee7b879d
-CentOS Linux 8	eu-west-3	ami-062fbc1f6aaecbede
-CentOS Linux 8	eu-south-1	ami-0bef61145b417dff4
-CentOS Linux 8	eu-north-1	ami-0e201bc52c64d7b5a
-CentOS Linux 8	me-south-1	ami-0b1c03e7905253652
-CentOS Linux 8	sa-east-1	ami-05a85bb881b9f8422
-CentOS Stream 8	us-east-2	ami-0d97ef13c06b05a19
-CentOS Stream 8	us-east-1	ami-059f1cc52e6c85908
-CentOS Stream 8	us-west-1	ami-0f377b303df4963ab
-CentOS Stream 8	us-west-2	ami-0ddc70e50205f89b6
-CentOS Stream 8	af-south-1	ami-0d9566f77fcfa00e5
-CentOS Stream 8	ap-east-1	ami-0b78c5e9b943c50be
-CentOS Stream 8	ap-south-1	ami-0c45b2c735e7cbd50
-CentOS Stream 8	ap-northeast-1	ami-01f328f87670cc361
-CentOS Stream 8	ap-northeast-2	ami-068ba57b029f1a659
-CentOS Stream 8	ap-southeast-1	ami-084be8fbdbd21b027
-CentOS Stream 8	ap-southeast-2	ami-0bac9d0b7acaea5d4
-CentOS Stream 8	ca-central-1	ami-02085625d206d7eb3
-CentOS Stream 8	eu-central-1	ami-073a8e22592a4a925
-CentOS Stream 8	eu-west-1	ami-090b347d44e58c47b
-CentOS Stream 8	eu-west-2	ami-0109cc95c55669f94
-CentOS Stream 8	eu-west-3	ami-0718ab19524d69434
-CentOS Stream 8	eu-south-1	ami-0138a15900e393a17
-CentOS Stream 8	eu-north-1	ami-08ec5ec25b9b7d5c5
-CentOS Stream 8	me-south-1	ami-01b5a0aafcc2288c2
-CentOS Stream 8	sa-east-1	ami-0f0c3edb7c1e023da"""
-        for i in centos.strip().split('\n'):
+        total = 0
 
-            _i = i.split()
+        for display_name, owner_id, name_filter in IMAGE_QUERIES:
+            for region in regions:
+                try:
+                    aApi.region = region
+                    aApi.start('ec2')
 
-            if _i[1] == 'Linux':
+                    paginator = aApi.client.get_paginator('describe_images')
+                    for page in paginator.paginate(
+                        Owners=[owner_id],
+                        Filters=[
+                            {'Name': 'name', 'Values': [name_filter]},
+                            {'Name': 'state', 'Values': ['available']},
+                            {'Name': 'virtualization-type', 'Values': ['hvm']},
+                            {'Name': 'root-device-type', 'Values': ['ebs']},
+                        ],
+                    ):
+                        for image in page.get('Images', []):
+                            self._save(image['ImageId'], display_name, region)
+                            total += 1
+                            break
+                except Exception:
+                    continue
 
-                name = f"{_i[0]} {_i[2]}"
-            else:
-                name = f"{_i[0]} {_i[1]} {_i[2]}"
+        self.stdout.write(self.style.SUCCESS(f'Updated {total} AMI images from AWS.'))
 
-            _data = {
-                'name': name,
-                'ami': _i[-1],
-                'region': _i[-2]
-            }
-            self.save_image(**_data)
+    def _update_static(self):
+        total = 0
+        for name, ami, region in STATIC_IMAGES:
+            self._save(ami, name, region)
+            total += 1
+        self.stdout.write(self.style.SUCCESS(f'Loaded {total} static AMI images.'))
 
-
-    def update_debian(self):
-        debian = """af-south-1 0ac613c8ba38c4ce0
-ap-east-1 05b7d5ed6f439d5f6
-ap-northeast-1 0f35a180aa403710c
-ap-northeast-2 05343e4dcb1d8c0b6
-ap-south-1 0ba0da84bb887dd8f
-ap-southeast-1 075ca2a4ee6e8f7ab
-ap-southeast-2 058c3dc2f9d829915
-ca-central-1 0230169901f603407
-eu-central-1 0f1026b68319bad6c
-eu-north-1 0c592cf8a1572c631
-eu-south-1 0f40464627743f691
-eu-west-1 09ea48ee08b5fd32c
-eu-west-2 05000c1a18d032285
-eu-west-3 0e02a25f8c952eeb0
-me-south-1 01fd1d8cdb95cb536
-sa-east-1 0dcf8fa73ede8196a
-us-east-1 07d02ee1eeb0c996c
-us-east-2 0eec7e5aeb20f40ce
-us-west-1 009159533df3b06da
-us-west-2 010327334690f5fa5"""
-
-        for i in debian.strip().split('\n'):
-
-            _i = i.split()
-
-
-            _data = {
-                'name': "Debian 10",
-                'ami': f"ami-{_i[-1]}",
-                'region': _i[0]
-            }
-            self.save_image(**_data)
+    def _save(self, ami, name, region):
+        Ec2Images.objects.update_or_create(
+            ami=ami,
+            defaults={'name': name, 'region': region},
+        )
