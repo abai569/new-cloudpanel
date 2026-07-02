@@ -5087,6 +5087,13 @@
                 },
                 meta: { title: "脚本管理" },
               },
+              {
+                path: "profile",
+                meta: { title: "个人资料" },
+                beforeEnter: function (t, f, n) {
+                  window.location.replace("/profile.html");
+                },
+              },
             ],
           },
           { path: "*", redirect: "/404", hidden: !0 },

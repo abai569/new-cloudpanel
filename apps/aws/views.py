@@ -1,5 +1,5 @@
 from django.http.response import JsonResponse
-from django.db.models import Q
+from django.db.models import Q, Case, When, Value, IntegerField
 from django.core.cache import cache
 from django.views import View
 from django.forms.models import model_to_dict
@@ -535,11 +535,21 @@ class Ec2GetRegionView(View):
             }
         })
 
+from django.db.models import Case, When, Value, IntegerField
+
 class Ec2GetImagesView(View):
-    # EC2 对应的 镜像列表
     def get(self, request):
         region = request.GET.get('region', '')
-        data_list = models.Ec2Images.objects.filter(region=region)
+        data_list = models.Ec2Images.objects.filter(region=region).annotate(
+            sort_order=Case(
+                When(name='Debian 13', then=Value(1)),
+                When(name='Debian 12', then=Value(2)),
+                When(name='Ubuntu 24.04 LTS', then=Value(3)),
+                When(name='Ubuntu 22.04 LTS', then=Value(4)),
+                default=Value(99),
+                output_field=IntegerField(),
+            )
+        ).order_by('sort_order', 'name')
         _data_list = []
         for data in data_list:
             _data = {
