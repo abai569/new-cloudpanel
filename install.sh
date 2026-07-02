@@ -106,6 +106,16 @@ install_compose() {
     log_info "Docker Compose 安装完成"
 }
 
+# 获取最新版本号
+get_latest_tag() {
+    local tag=$(curl -sf https://api.github.com/repos/abai569/new-cloudpanel/tags | grep -o '"name":[[:space:]]*"v[^"]*"' | head -1 | grep -o 'v[0-9.]*' || echo "")
+    if [ -n "$tag" ]; then
+        echo "${tag#v}"
+    else
+        echo "latest"
+    fi
+}
+
 # 卸载功能
 do_uninstall() {
     echo ""
@@ -156,10 +166,20 @@ do_update() {
     fi
 
     cd "$INSTALL_DIR"
-    
+
     log_step "正在备份配置文件..."
     cp .env .env.bak 2>/dev/null || true
-    
+
+    log_step "正在检查最新版本..."
+    local latest_tag=$(get_latest_tag)
+    if [ -f .env ]; then
+        local current_tag=$(sed -n 's/^IMAGE_TAG=//p' .env 2>/dev/null || echo "latest")
+        if [ "$current_tag" = "latest" ] && [ "$latest_tag" != "latest" ]; then
+            log_info "更新 IMAGE_TAG: latest → ${latest_tag}"
+            sed -i "s/IMAGE_TAG=.*/IMAGE_TAG=${latest_tag}/" .env
+        fi
+    fi
+
     log_step "正在下载最新配置文件..."
     local BASE_URL="https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/heads/main"
     curl -fsSL "${BASE_URL}/docker-compose.yml" -o docker-compose.yml || {
@@ -259,7 +279,7 @@ ALLOWED_HOSTS=*
 CORS_ALLOWED_ORIGINS=http://localhost:8086,http://127.0.0.1:8086
 
 # 镜像版本 (latest=最新版, 或指定版本如 1.0.0)
-IMAGE_TAG=latest
+IMAGE_TAG=$(get_latest_tag)
 
 # 端口设置
 FRONTENDPORT=8086
