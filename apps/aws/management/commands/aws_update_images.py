@@ -11,6 +11,15 @@ class Command(BaseCommand):
         self.update_centos()
         self.update_ubuntu()
 
+    def save_image(self, name, ami, region):
+        Ec2Images.objects.update_or_create(
+            ami=ami,
+            defaults={
+                'name': name,
+                'region': region,
+            },
+        )
+
     def update_ubuntu(self):
         ubuntu = """af-south-1	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-0dbb0a9b02af77021	hvm
         ap-east-1	xenial	16.04 LTS	amd64	hvm:ebs-ssd	20210224	ami-07498dac6f228478b	hvm
@@ -93,7 +102,7 @@ class Command(BaseCommand):
                 'ami': ami,
                 'region': region
             }
-            Ec2Images.objects.create(**_data)
+            self.save_image(**_data)
 
 
     def update_centos(self):
@@ -172,7 +181,7 @@ CentOS Stream 8	sa-east-1	ami-0f0c3edb7c1e023da"""
                 'ami': _i[-1],
                 'region': _i[-2]
             }
-            Ec2Images.objects.create(**_data)
+            self.save_image(**_data)
 
 
     def update_debian(self):
@@ -207,4 +216,4 @@ us-west-2 010327334690f5fa5"""
                 'ami': f"ami-{_i[-1]}",
                 'region': _i[0]
             }
-            Ec2Images.objects.create(**_data)
+            self.save_image(**_data)
