@@ -47,7 +47,7 @@ services:
       - panel_network
 
   api:
-    image: ghcr.io/nodewebzsz/cloudpanel:latest
+    image: ghcr.io/abai569/new-cloudpanel:latest
     container_name: cloudpanel-api
     restart: always
     ports:
