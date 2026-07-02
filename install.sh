@@ -284,7 +284,7 @@ wait_for_container() {
     log_info "正在等待服务启动（最多等待 30 秒）..."
     local count=0
     while [ $count -lt 30 ]; do
-        if docker compose exec -T $COMPOSE_SVC python -c "import django; django.setup(); from django.contrib.auth.models import User; print('ready')" &>/tmp/cp_init_check.log; then
+        if curl -sf http://localhost:8111/health/ &>/dev/null; then
             break
         fi
         sleep 1
