@@ -262,6 +262,10 @@ IMAGE_TAG=latest
 # 端口设置
 FRONTENDPORT=8086
 BACKENDPORT=8111
+
+# Gunicorn配置，低配机器建议保持2或1
+GUNICORN_WORKERS=2
+GUNICORN_TIMEOUT=120
 EOF
 
     cd "$INSTALL_DIR"
@@ -284,9 +288,9 @@ EOF
 
 # 辅助函数：等待容器就绪
 wait_for_container() {
-    log_info "正在等待服务启动（最多等待 30 秒）..."
+    log_info "正在等待服务启动（最多等待 120 秒）..."
     local count=0
-    while [ $count -lt 30 ]; do
+    while [ $count -lt 120 ]; do
         if curl -sf http://localhost:8111/health/ &>/dev/null; then
             break
         fi
@@ -294,7 +298,7 @@ wait_for_container() {
         count=$((count + 1))
     done
     
-    if [ $count -ge 30 ]; then
+    if [ $count -ge 120 ]; then
         log_error "服务启动超时，请检查日志: docker logs $SERVICE_CONTAINER"
         exit 1
     fi
