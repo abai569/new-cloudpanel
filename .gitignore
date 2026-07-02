@@ -50,4 +50,5 @@ logs/
 env/
 venv/
 ENV/
+AGENTS.md
 celerybeat-schedule 
