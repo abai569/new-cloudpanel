@@ -2,7 +2,7 @@
 {% load i18n static admin_extras log %}
 
 {% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static "admin/css/dashboard.css" %}">
-<style>#content-main{float:none!important;width:auto!important}#content-related{float:none!important;width:auto!important}</style>{% endblock %}
+<style>#content-main,#content-related{float:none!important;width:auto!important}#content,#container,#main{max-width:none!important;width:100%!important}</style>{% endblock %}
 {% block coltype %}colMS{% endblock %}
 {% block bodyclass %}{{ block.super }} dashboard{% endblock %}
 {% block nav-breadcrumbs %}{% endblock %}
