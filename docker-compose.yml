@@ -29,6 +29,7 @@ services:
 
   api:
     image: ghcr.io/abai569/new-cloudpanel:latest
+    platform: linux/amd64
     container_name: cloudpanel-api
     restart: always
     ports:
