@@ -1,0 +1,14 @@
+.git
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+data/
+logs/
+screen.png
+image.png
+*.log
+celerybeat-schedule
