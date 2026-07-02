@@ -152,6 +152,17 @@ do_update() {
     fi
 
     cd "$INSTALL_DIR"
+    
+    log_step "正在备份配置文件..."
+    cp .env .env.bak 2>/dev/null || true
+    
+    log_step "正在下载最新配置文件..."
+    local BASE_URL="https://raw.githubusercontent.com/abai569/new-cloudpanel/refs/heads/main"
+    curl -fsSL "${BASE_URL}/docker-compose.yml" -o docker-compose.yml || {
+        log_error "下载 docker-compose.yml 失败"
+        exit 1
+    }
+    
     log_info "正在拉取最新镜像..."
     docker compose pull
 
