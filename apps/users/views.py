@@ -8,9 +8,6 @@ from django.views import View
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
 
-
-from django.views import View
-
 from libs.utils import DateTimeToStr, Pagination
 
 # 加载 App 资源
@@ -85,6 +82,43 @@ def Info(request):
 def Logout(request):
     cache.set(request.token, '', 0)
     return JsonResponse({'code': 20000, 'data': 'success'})
+
+# 修改密码
+@is_token
+def ChangePassword(request):
+    if request.method != 'POST':
+        return JsonResponse({'code': 20001, 'message': '请使用POST请求'})
+    input_data = forms.ChangePasswordForm(request.POST)
+    if not input_data.is_valid():
+        return JsonResponse({'code': 20001, 'message': '参数错误', 'error_data': input_data.errors})
+    data = input_data.clean()
+    old_password = data.get('old_password')
+    new_password = data.get('new_password')
+    user = authenticate(username=request.user.username, password=old_password)
+    if not user:
+        return JsonResponse({'code': 20002, 'message': '旧密码错误'})
+    user.set_password(new_password)
+    user.save()
+    cache.set(request.token, '', 0)
+    return JsonResponse({'code': 20000, 'message': '密码修改成功，请重新登录'})
+
+# 获取个人资料
+@is_token
+def Profile(request):
+    userinfo = User.objects.filter(username=request.user.username).first()
+    if not userinfo:
+        return JsonResponse({'code': 50008, 'message': '用户信息不存在，请重新登录'})
+    data = {
+        'avatar': '',
+        'name': userinfo.username,
+        'username': userinfo.username,
+        'email': userinfo.email,
+        'create_time': userinfo.date_joined.strftime("%Y-%m-%d %H:%M:%S"),
+        'roles': ['user']
+    }
+    if userinfo.is_superuser:
+        data.update({'roles': ['admin']})
+    return JsonResponse({'code': 20000, 'message': '获取成功', 'data': data})
 
 # 获取 用户 基本设置
 def getOptions(request):

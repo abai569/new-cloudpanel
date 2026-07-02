@@ -186,7 +186,7 @@ do_update() {
     wait_for_container
 
     log_info "正在初始化数据变更..."
-    run_django_command "python manage.py aws_update_images"
+    run_django_command "python manage.py aws_update_images --clear"
 
     echo ""
     echo -e "${GREEN}CloudPanel 升级完成！${NC}"

@@ -126,15 +126,32 @@ class DoApi():
 
     @classmethod
     def get_images(cls):
-        image_list = [
-            'centos-7-x64',
-            'centos-8-x64',
-            'debian-9-x64',
-            'debian-10-x64',
-            'ubuntu-18-04-x64',
-            'ubuntu-20-10-x64'
+        try:
+            api_url = 'https://api.digitalocean.com'
+            headers = {'Content-Type': 'application/json'}
+            resp = requests.get(f'{api_url}/v2/images', params={'type': 'distribution'}, headers=headers, timeout=30)
+            if resp.status_code != 200:
+                return cls._fallback_images()
+            slugs = set()
+            for img in resp.json().get('images', []):
+                s = img.get('slug', '')
+                if any(s.startswith(p) for p in ['debian-11', 'debian-12', 'debian-13', 'ubuntu-22-04', 'ubuntu-24-04']):
+                    slugs.add(s)
+            if slugs:
+                return sorted(slugs)
+        except Exception:
+            pass
+        return cls._fallback_images()
+
+    @classmethod
+    def _fallback_images(cls):
+        return [
+            'debian-11-x64',
+            'debian-12-x64',
+            'debian-13-x64',
+            'ubuntu-22-04-x64',
+            'ubuntu-24-04-x64',
         ]
-        return image_list
 
     def get_regions(self):
         try:

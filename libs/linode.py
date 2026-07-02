@@ -124,15 +124,16 @@ class LinodeApi():
 
     def get_images(self):
         url = 'https://api.linode.com/v4/images'
-        self.report_get(url)
-
-        print(self.ret)
-
-        for _i in self.ret['data']:
-            #print(_i)
-            _id = _i['id']
-            label = _i['label']
-            print(f"('{_id}', '{label}'),")
+        try:
+            self.report_get(url)
+            images = []
+            for img in self.ret.get('data', []):
+                img_id = img.get('id', '')
+                if any(img_id.startswith(p) for p in ['linode/debian11', 'linode/debian12', 'linode/debian13', 'linode/ubuntu22.04', 'linode/ubuntu24.04']):
+                    images.append(img_id)
+            return images
+        except Exception:
+            return []
 
     def get_bill(self):
         url = 'https://api.linode.com/v4/account'

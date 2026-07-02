@@ -133,17 +133,11 @@ class Account(models.Model):
     @classmethod
     def image_list(cls, name=''):
         _list = {
-            'OpenLogic:CentOS:7.5:latest': 'CentOS 7.5',
-            'OpenLogic:CentOS:7_9:latest': 'CentOS 7.9',
-            'Canonical:UbuntuServer:18.04-LTS:latest': 'Ubuntu 18.04',
-            'canonical:0001-com-ubuntu-server-jammy-daily:22_04-daily-lts-gen2:latest': 'Ubuntu 22.04',
-            #'Canonical:UbuntuServer:20.04-LTS:latest': 'Ubuntu 20.04',
-            #'Canonical:UbuntuServer:21.04-LTS:latest': 'Ubuntu 21.04',
-            'Debian:debian-10:10:latest': 'Debian 10.10',
-            #'Debian:debian-11:2:latest': 'Debian 11.2',
-            'MicrosoftWindowsServer:WindowsServer:2012-Datacenter-smalldisk:latest': 'Win 2012 DC ',
-            'MicrosoftWindowsServer:WindowsServer:2016-Datacenter-smalldisk:latest': 'Win 2016 DC',
-            'MicrosoftWindowsServer:WindowsServer:2019-Datacenter-smalldisk:latest': 'Win 2019 DC',
+            'Canonical:ubuntu-24_04-lts:server:latest': 'Ubuntu 24.04 LTS',
+            'Canonical:0001-com-ubuntu-server-jammy:22_04-lts:latest': 'Ubuntu 22.04 LTS',
+            'Debian:debian-13:13:latest': 'Debian 13',
+            'Debian:debian-12:12:latest': 'Debian 12',
+            'Debian:debian-11:11:latest': 'Debian 11',
         }
         if name in '': return _list
         return _list.get(name)

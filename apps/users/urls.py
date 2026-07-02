@@ -14,6 +14,12 @@ urlpatterns = [
     # 获取用户信息
     path('info', views.is_token(views.Info), name="UsersInfo"),
 
+    # 个人资料
+    path('profile', views.is_token(views.Profile), name="UsersProfile"),
+
+    # 修改密码
+    path('change_password', views.is_token(views.ChangePassword), name="UsersChangePassword"),
+
     # 基本设置
     path('get/options', views.is_token(views.getOptions), name="getOptions"),
 
