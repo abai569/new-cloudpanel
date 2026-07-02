@@ -14,12 +14,18 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.db import connection
+from django.db.utils import DatabaseError
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.urls import path, include
 
 
 def health(request):
+    try:
+        connection.ensure_connection()
+    except DatabaseError:
+        return JsonResponse({'status': 'error', 'message': 'database unavailable'}, status=503)
     return JsonResponse({'status': 'ok'})
 
 

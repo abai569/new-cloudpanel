@@ -172,6 +172,8 @@ do_update() {
         log_error "下载 nginx.conf 失败"
         exit 1
     }
+
+    prepare_sqlite_storage
     
     log_info "正在拉取最新镜像..."
     docker compose pull
@@ -269,6 +271,7 @@ GUNICORN_TIMEOUT=120
 EOF
 
     cd "$INSTALL_DIR"
+    prepare_sqlite_storage
     
     log_step "开始拉取镜像并启动服务..."
     $COMPOSE_CMD up -d
@@ -305,10 +308,38 @@ wait_for_container() {
     log_info "服务启动成功"
 }
 
+# 辅助函数：修复 SQLite 存储路径
+prepare_sqlite_storage() {
+    mkdir -p data logs
+
+    if [ -d "data/db.sqlite3" ]; then
+        if [ -z "$(ls -A data/db.sqlite3 2>/dev/null)" ]; then
+            log_warn "检测到 data/db.sqlite3 是空目录，正在修复为 SQLite 数据库文件"
+            rmdir data/db.sqlite3
+        else
+            log_error "data/db.sqlite3 是非空目录，无法作为 SQLite 数据库文件使用。请先备份并手动处理该目录。"
+            exit 1
+        fi
+    fi
+
+    if [ -e "data/db.sqlite3" ] && [ ! -f "data/db.sqlite3" ]; then
+        log_error "data/db.sqlite3 已存在但不是普通文件，无法作为 SQLite 数据库使用"
+        exit 1
+    fi
+
+    touch data/db.sqlite3 || {
+        log_error "无法创建或写入 data/db.sqlite3"
+        exit 1
+    }
+}
+
 # 辅助函数：执行 Django 命令
 run_django_command() {
     local cmd="$1"
-    docker compose exec -T $COMPOSE_SVC $cmd || log_warn "警告: 执行命令 $cmd 失败"
+    if ! docker compose exec -T $COMPOSE_SVC $cmd; then
+        log_error "执行命令 $cmd 失败"
+        return 1
+    fi
 }
 
 # 辅助函数：创建默认管理员
