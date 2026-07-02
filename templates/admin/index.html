@@ -1,15 +1,16 @@
 {% extends "admin/index.html" %}
+{% load admin_extras %}
+{% load log %}
 
 {% block content %}
 <div id="content-main">
   <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:20px;">
     {% with ordered="aws users linode azure do auth" %}
-    {% for label in ordered.split %}
+    {% for label in ordered|split:" " %}
       {% if forloop.counter0 == 2 %}
       <div class="module">
         <h2>{% translate 'Recent actions' %}</h2>
         <h3>{% translate 'My actions' %}</h3>
-        {% load log %}
         {% get_admin_log 10 as admin_log for_user user %}
         {% if not admin_log %}
           <p>{% translate 'None available' %}</p>
