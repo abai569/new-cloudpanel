@@ -186,21 +186,6 @@
                       [e._v("登 录")],
                     ),
                     e._v(" "),
-                    o("div", { staticStyle: { "font-size": "13px" } }, [
-                      o("span", { staticStyle: { color: "#ffffff" } }, [
-                        e._v(""),
-                        o(
-                          "a",
-                          {
-                            attrs: {
-                              href: "https://github.com/abai569/new-cloudpanel",
-                              target: "_blank",
-                            },
-                          },
-                          [e._v("开源地址")],
-                        ),
-                      ]),
-                    ]),
                   ],
                   1,
                 ),
